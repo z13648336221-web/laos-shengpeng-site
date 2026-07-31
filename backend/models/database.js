@@ -1,231 +1,341 @@
-const fs = require('fs');
+/**
+ * SQLite 数据库封装
+ * 提供统一的数据库操作接口
+ */
+
+const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '../database/data.json');
+const dbPath = path.join(__dirname, '../database/shengpeng.db');
+const backupDir = path.join(__dirname, '../database/backups');
 
-let data = {
-  inquiries: [],
-  shipments: [],
-  tracking_events: [],
-  news: [],
-  services: [],
-  orders: [],
-  customers: [],
-  customer_contacts: [],
-  quotes: [],
-  admins: [],
-  sessions: [],
-  chats: [],
-  roles: [],
-  logs: []
-};
+// 确保备份目录存在
+if (!fs.existsSync(backupDir)) {
+  fs.mkdirSync(backupDir, { recursive: true });
+}
 
-let nextIds = {
-  inquiries: 1,
-  shipments: 1,
-  tracking_events: 1,
-  news: 1,
-  services: 1,
-  orders: 1,
-  customers: 1,
-  customer_contacts: 1,
-  quotes: 1,
-  admins: 1,
-  sessions: 1,
-  chats: 1,
-  roles: 1,
-  logs: 1
-};
+let db = null;
 
-const init = () => {
-  return new Promise((resolve) => {
-    if (fs.existsSync(dbPath)) {
-      try {
-        const content = fs.readFileSync(dbPath, 'utf8');
-        const saved = JSON.parse(content);
-        data = saved.data || data;
-        nextIds = saved.nextIds || nextIds;
-      } catch (err) {
-        console.error('数据库文件损坏，使用新数据:', err);
+/**
+ * 初始化数据库连接
+ */
+function init() {
+  return new Promise((resolve, reject) => {
+    try {
+      // 检查数据库文件是否存在
+      if (!fs.existsSync(dbPath)) {
+        console.error('数据库文件不存在，请先运行: npm run init-sqlite');
+        reject(new Error('Database file not found'));
+        return;
       }
-    }
-    resolve();
-  });
-};
 
-const save = () => {
+      // 创建数据库连接
+      db = new Database(dbPath, { 
+        verbose: process.env.NODE_ENV === 'development' ? console.log : null 
+      });
+      
+      // 启用外键约束
+      db.pragma('foreign_keys = ON');
+      
+      // 启用 WAL 模式以提高并发性能
+      db.pragma('journal_mode = WAL');
+      
+      console.log('✓ SQLite 数据库连接成功');
+      resolve();
+    } catch (error) {
+      console.error('✗ 数据库连接失败:', error.message);
+      reject(error);
+    }
+  });
+}
+
+/**
+ * 执行查询并返回所有结果
+ */
+function query(sql, params = []) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
   try {
-    const dir = path.dirname(dbPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(dbPath, JSON.stringify({ data, nextIds }, null, 2));
-  } catch (err) {
-    console.error('保存数据库失败:', err);
+    const stmt = db.prepare(sql);
+    return stmt.all(...params);
+  } catch (error) {
+    console.error('Query error:', error.message);
+    throw error;
   }
-};
+}
 
-const query = (table) => {
-  return Promise.resolve(data[table] || []);
-};
-
-const insert = (table, row) => {
-  const id = nextIds[table]++;
-  const newRow = { id, ...row, created_at: new Date().toISOString() };
-  
-  if (!data[table]) data[table] = [];
-  data[table].push(newRow);
-  save();
-  
-  return Promise.resolve({ lastID: id, changes: 1 });
-};
-
-const update = (table, conditions, updates) => {
-  let changes = 0;
-  const rows = data[table] || [];
-  
-  rows.forEach(row => {
-    let match = true;
-    for (const [key, value] of Object.entries(conditions)) {
-      if (row[key] != value) {
-        match = false;
-        break;
-      }
-    }
-    if (match) {
-      Object.assign(row, updates);
-      changes++;
-    }
-  });
-  
-  if (changes > 0) {
-    save();
+/**
+ * 执行查询并返回单个结果
+ */
+function get(sql, params = []) {
+  if (!db) {
+    throw new Error('Database not initialized');
   }
   
-  return Promise.resolve({ changes });
-};
+  try {
+    const stmt = db.prepare(sql);
+    return stmt.get(...params);
+  } catch (error) {
+    console.error('Get error:', error.message);
+    throw error;
+  }
+}
 
-const deleteRow = (table, conditions) => {
-  const originalLength = (data[table] || []).length;
-  data[table] = (data[table] || []).filter(row => {
-    for (const [key, value] of Object.entries(conditions)) {
-      if (String(row[key]) === String(value)) return false;
-    }
-    return true;
-  });
-  
-  const changes = originalLength - (data[table] || []).length;
-  
-  if (changes > 0) {
-    save();
+/**
+ * 执行 INSERT/UPDATE/DELETE 操作
+ */
+function run(sql, params = []) {
+  if (!db) {
+    throw new Error('Database not initialized');
   }
   
-  return Promise.resolve({ changes });
-};
+  try {
+    const stmt = db.prepare(sql);
+    const result = stmt.run(...params);
+    return {
+      lastID: result.lastInsertRowid,
+      changes: result.changes
+    };
+  } catch (error) {
+    console.error('Run error:', error.message);
+    throw error;
+  }
+}
 
-const get = (table, conditions) => {
-  const result = (data[table] || []).find(row => {
-    for (const [key, value] of Object.entries(conditions)) {
-      if (row[key] != value) return false;
-    }
-    return true;
-  });
-  return Promise.resolve(result || null);
-};
+/**
+ * 插入数据到指定表
+ */
+function insert(table, data) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const columns = Object.keys(data);
+    const placeholders = columns.map(() => '?').join(', ');
+    const values = Object.values(data);
+    
+    const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+    return run(sql, values);
+  } catch (error) {
+    console.error('Insert error:', error.message);
+    throw error;
+  }
+}
 
-const run = (sql, params = []) => {
-  return new Promise((resolve) => {
-    const upperSql = sql.toUpperCase().trim();
+/**
+ * 更新数据
+ */
+function update(table, conditions, updates) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const setClause = Object.keys(updates).map(col => `${col} = ?`).join(', ');
+    const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
+    const values = [...Object.values(updates), ...Object.values(conditions)];
     
-    if (upperSql.startsWith('INSERT INTO')) {
-      const tableMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
-      const insertMatch = sql.match(/INSERT\s+INTO\s+\w+\s*\(([^)]+)\)/i);
-      
-      if (tableMatch && insertMatch) {
-        const table = tableMatch[1];
-        const columns = insertMatch[1].split(',').map(c => c.trim());
-        const row = {};
-        
-        columns.forEach((col, index) => {
-          row[col] = params[index];
-        });
-        
-        const id = nextIds[table]++;
-        const newRow = { id, ...row, created_at: new Date().toISOString() };
-        
-        if (!data[table]) data[table] = [];
-        data[table].push(newRow);
-        save();
-        
-        resolve({ lastID: id, changes: 1 });
-        return;
+    const sql = `UPDATE ${table} SET ${setClause} WHERE ${whereClause}`;
+    return run(sql, values);
+  } catch (error) {
+    console.error('Update error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 删除数据
+ */
+function deleteRow(table, conditions) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
+    const values = Object.values(conditions);
+    
+    const sql = `DELETE FROM ${table} WHERE ${whereClause}`;
+    return run(sql, values);
+  } catch (error) {
+    console.error('Delete error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 根据条件查询单条记录
+ */
+function find(table, conditions) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
+    const values = Object.values(conditions);
+    
+    const sql = `SELECT * FROM ${table} WHERE ${whereClause} LIMIT 1`;
+    return get(sql, values);
+  } catch (error) {
+    console.error('Find error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 根据条件查询多条记录
+ */
+function findAll(table, conditions = {}, options = {}) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    let sql = `SELECT * FROM ${table}`;
+    const values = [];
+    
+    if (Object.keys(conditions).length > 0) {
+      const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
+      sql += ` WHERE ${whereClause}`;
+      values.push(...Object.values(conditions));
+    }
+    
+    if (options.orderBy) {
+      sql += ` ORDER BY ${options.orderBy}`;
+      if (options.orderDir) {
+        sql += ` ${options.orderDir.toUpperCase()}`;
       }
     }
     
-    if (upperSql.startsWith('UPDATE')) {
-      const tableMatch = sql.match(/UPDATE\s+(\w+)/i);
-      const setMatch = sql.match(/SET\s+([^WHERE]+)/i);
-      const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
-      
-      if (tableMatch && setMatch && whereMatch) {
-        const table = tableMatch[1];
-        const column = whereMatch[1];
-        const whereValue = params[params.length - 1];
-        
-        const setClause = setMatch[1].trim();
-        const setPairs = setClause.split(',').map(p => p.trim());
-        
-        let changes = 0;
-        const rows = data[table] || [];
-        
-        rows.forEach(row => {
-          if (String(row[column]) === String(whereValue)) {
-            let paramIndex = 0;
-            setPairs.forEach(pair => {
-              const [colName] = pair.split('=').map(s => s.trim());
-              if (colName && colName !== '?') {
-                row[colName] = params[paramIndex++];
-              }
-            });
-            changes++;
-          }
-        });
-        
-        if (changes > 0) {
-          save();
-        }
-        
-        resolve({ changes });
-        return;
-      }
+    if (options.limit) {
+      sql += ` LIMIT ${options.limit}`;
     }
     
-    if (upperSql.startsWith('DELETE FROM')) {
-      const tableMatch = sql.match(/DELETE\s+FROM\s+(\w+)/i);
-      const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
-      
-      if (tableMatch && whereMatch) {
-        const table = tableMatch[1];
-        const column = whereMatch[1];
-        const value = params[0];
-        
-        const originalLength = (data[table] || []).length;
-        data[table] = (data[table] || []).filter(row => String(row[column]) !== String(value));
-        
-        const changes = originalLength - (data[table] || []).length;
-        
-        if (changes > 0) {
-          save();
-        }
-        
-        resolve({ changes });
-        return;
-      }
+    if (options.offset) {
+      sql += ` OFFSET ${options.offset}`;
     }
     
-    resolve({ lastID: 0, changes: 0 });
-  });
-};
+    return query(sql, values);
+  } catch (error) {
+    console.error('FindAll error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 计数查询
+ */
+function count(table, conditions = {}) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    let sql = `SELECT COUNT(*) as count FROM ${table}`;
+    const values = [];
+    
+    if (Object.keys(conditions).length > 0) {
+      const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
+      sql += ` WHERE ${whereClause}`;
+      values.push(...Object.values(conditions));
+    }
+    
+    const result = get(sql, values);
+    return result ? result.count : 0;
+  } catch (error) {
+    console.error('Count error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 执行事务
+ */
+function transaction(fn) {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    // better-sqlite3 的 transaction 是一个函数，需要调用它来创建事务包装器
+    const transactionWrapper = db.transaction(fn);
+    return transactionWrapper();
+  } catch (error) {
+    console.error('Transaction error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 创建数据库备份
+ */
+async function backup() {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(backupDir, `shengpeng-backup-${timestamp}.db`);
+    
+    // 备份数据库 (better-sqlite3 的 backup 是同步的)
+    db.backup(backupPath);
+    console.log('✓ 数据库备份创建成功:', backupPath);
+    
+    return backupPath;
+  } catch (error) {
+    console.error('Backup error:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * 关闭数据库连接
+ */
+function close() {
+  if (db) {
+    try {
+      db.close();
+      db = null;
+      console.log('✓ 数据库连接已关闭');
+    } catch (error) {
+      console.error('关闭数据库连接时出错:', error.message);
+    }
+  }
+}
+
+/**
+ * 获取数据库统计信息
+ */
+function getStats() {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
+  
+  try {
+    const tables = query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+    const stats = {};
+    
+    tables.forEach(table => {
+      const count = query(`SELECT COUNT(*) as count FROM ${table.name}`)[0].count;
+      stats[table.name] = count;
+    });
+    
+    return stats;
+  } catch (error) {
+    console.error('Get stats error:', error.message);
+    throw error;
+  }
+}
+
+// 兼容旧版接口的别名函数
+const queryTable = (table) => query(`SELECT * FROM ${table}`);
+const getRow = (table, conditions) => find(table, conditions);
 
 module.exports = {
   init,
@@ -234,5 +344,15 @@ module.exports = {
   run,
   insert,
   update,
-  deleteRow
+  deleteRow,
+  find,
+  findAll,
+  count,
+  transaction,
+  backup,
+  close,
+  getStats,
+  // 兼容旧版
+  queryTable,
+  getRow
 };

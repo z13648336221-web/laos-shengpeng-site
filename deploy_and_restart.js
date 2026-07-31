@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('ssh2');
 
-// 需要上传的文件列表（安全修复后的后端文件）
+// 需要上传的文件列表（数据库升级后的后端文件）
 const filesToUpload = [
   // 前端文件
   './index.html',
@@ -20,7 +20,7 @@ const filesToUpload = [
   './css/admin.css',
   './css/chat.css',
   
-  // 后端核心文件（安全修复后）
+  // 后端核心文件（数据库升级后）
   './backend/package.json',
   './backend/package-lock.json',
   './backend/.env',
@@ -28,6 +28,12 @@ const filesToUpload = [
   './backend/models/database.js',
   './backend/middleware/auth.js',
   './backend/middleware/security.js',
+  
+  // 数据库相关文件
+  './backend/database/schema.sql',
+  './backend/database/shengpeng.db',
+  './backend/scripts/init-sqlite.js',
+  './backend/scripts/migrate-to-sqlite.js',
   
   // 后端路由文件
   './backend/routes/auth.js',
@@ -47,7 +53,7 @@ const filesToUpload = [
 
 const conn = new Client();
 
-// 第二步：重启后端
+// 第二步：数据库迁移和重启后端
 function restartBackend() {
   console.log('[重启] 停止旧进程...');
   conn.exec('pkill -f "node.*server.js" 2>/dev/null || true', (err, stream) => {
@@ -55,22 +61,30 @@ function restartBackend() {
     
     stream.on('close', () => {
       setTimeout(() => {
-        console.log('[重启] 安装依赖并启动新进程...');
-        conn.exec('cd /var/www/laos-logistics/backend && npm install && nohup node server.js > /dev/null 2>&1 & sleep 3 && curl -s http://localhost:3001/api/news | head -c 50', (err, stream) => {
-          if (err) { console.error(err); conn.end(); return; }
-          
-          let output = '';
-          stream.on('data', data => output += data);
-          stream.stderr.on('data', () => {});
+        console.log('[数据库] 检查并迁移数据库...');
+        // 检查是否存在SQLite数据库，如果不存在则初始化
+        conn.exec('cd /var/www/laos-logistics/backend && if [ ! -f database/shengpeng.db ]; then npm run init-sqlite; else echo "SQLite数据库已存在"; fi', (err, stream) => {
+          if (err) { console.error(err); }
           
           stream.on('close', () => {
-            console.log('[重启] 后端已启动');
-            if (output.includes('success')) {
-              console.log('✓ 健康检查通过\n');
-            } else {
-              console.log('⚠️ 健康检查:', output || '无输出\n');
-            }
-            conn.end();
+            console.log('[重启] 安装依赖并启动新进程...');
+            conn.exec('cd /var/www/laos-logistics/backend && npm install && nohup node server.js > /dev/null 2>&1 & sleep 3 && curl -s http://localhost:3001/api/news | head -c 50', (err, stream) => {
+              if (err) { console.error(err); conn.end(); return; }
+              
+              let output = '';
+              stream.on('data', data => output += data);
+              stream.stderr.on('data', () => {});
+              
+              stream.on('close', () => {
+                console.log('[重启] 后端已启动');
+                if (output.includes('success')) {
+                  console.log('✓ 健康检查通过\n');
+                } else {
+                  console.log('⚠️ 健康检查:', output || '无输出\n');
+                }
+                conn.end();
+              });
+            });
           });
         });
       }, 2000);
