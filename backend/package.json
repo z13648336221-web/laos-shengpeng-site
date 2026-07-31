@@ -9,7 +9,13 @@
     "init": "node scripts/init-data.js",
     "init-sqlite": "node scripts/init-sqlite.js",
     "migrate-sqlite": "node scripts/migrate-to-sqlite.js",
-    "test": "node test/api.test.js"
+    "test": "node test/api.test.js",
+    "db:monitor": "node scripts/monitor-database.js",
+    "db:backup": "node scripts/auto-backup.js",
+    "db:analyze": "node scripts/analyze-queries.js",
+    "db:health": "node scripts/health-check.js",
+    "db:scheduler": "node scripts/scheduler.js",
+    "db:scheduler:list": "node scripts/scheduler.js list"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -21,7 +27,8 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "joi": "^17.11.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "node-cron": "^4.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
