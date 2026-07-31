@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>新闻管理后台 - 重庆恒慈国际贸易有限公司</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">🚢 恒慈国际贸易管理</div>
+    <nav>
+      <a href="admin-dashboard.html">📊 仪表盘</a>
+      <a href="admin.html" class="active">📰 新闻管理</a>
+      <a href="admin-orders.html">📦 订单管理</a>
+      <a href="admin-customers.html">👥 客户管理</a>
+      <a href="admin-quotes.html">💰 报价管理</a>
+      <a href="admin-inquiry.html">📋 询价管理</a>
+      <a href="admin-chat.html">💬 客服管理</a>
+      <a href="admin-reports.html">📈 数据分析</a>
+      <a href="admin-logs.html">🔒 登录日志</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>📰 新闻管理</h1>
+      <div class="user-info">
+        <span class="user-name" id="userName">管理员</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">新闻列表</div>
+        <button class="btn btn-primary" onclick="showAddModal()">+ 添加新闻</button>
+      </div>
+      <div id="newsList">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="newsModal">
+    <div class="modal" style="max-width: 800px;">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">添加新闻</div>
+        <span class="modal-close" onclick="closeModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <form id="newsForm" onsubmit="submitNews(event)">
+          <div class="form-group">
+            <label>新闻分类 *</label>
+            <select id="category" required>
+              <option value="">请选择分类</option>
+              <option value="company">📢 公司动态</option>
+              <option value="service">🚀 服务资讯</option>
+              <option value="policy">📋 政策解读</option>
+              <option value="industry">📊 行业动态</option>
+            </select>
+          </div>
+
+          <div class="form-group form-full">
+            <label>新闻标题</label>
+            <div class="lang-tabs" style="display: flex; gap: 8px; margin-bottom: 12px;">
+              <span class="lang-tab active" onclick="switchLang('zh')">中文</span>
+              <span class="lang-tab" onclick="switchLang('en')">English</span>
+              <span class="lang-tab" onclick="switchLang('vi')">Tiếng Việt</span>
+            </div>
+            <input type="text" id="title_zh" placeholder="中文标题 *" required />
+            <input type="text" id="title_en" placeholder="English Title" style="margin-top: 8px; display: none;" />
+            <input type="text" id="title_vi" placeholder="Tiêu đề tiếng Việt" style="margin-top: 8px; display: none;" />
+          </div>
+
+          <div class="form-group form-full">
+            <label>新闻摘要</label>
+            <textarea id="summary_zh" placeholder="中文摘要（可选）"></textarea>
+            <textarea id="summary_en" placeholder="English Summary" style="margin-top: 8px; display: none;"></textarea>
+            <textarea id="summary_vi" placeholder="Tóm tắt tiếng Việt" style="margin-top: 8px; display: none;"></textarea>
+          </div>
+
+          <div class="form-group form-full">
+            <label>新闻内容</label>
+            <textarea id="content_zh" placeholder="中文内容 *" required></textarea>
+            <textarea id="content_en" placeholder="English Content" style="margin-top: 8px; display: none;"></textarea>
+            <textarea id="content_vi" placeholder="Nội dung tiếng Việt" style="margin-top: 8px; display: none;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>封面图片</label>
+            <div id="imageUploadArea" class="upload-area" onclick="document.getElementById('imageFile').click()">
+              <input type="file" id="imageFile" accept="image/*" style="display: none;" onchange="handleImageUpload(this)" />
+              <div id="imagePreview" style="display: none;">
+                <img id="imagePreviewImg" style="max-width: 200px; max-height: 150px; object-fit: cover;" />
+                <button onclick="clearImage()">移除</button>
+              </div>
+              <div id="imageUploadHint">
+                <span class="upload-icon">📷</span>
+                <p>点击或拖拽上传图片</p>
+                <p class="upload-hint">支持 JPG、PNG、GIF，最大 5MB</p>
+              </div>
+            </div>
+            <input type="text" id="image_url" placeholder="或输入图片URL" style="margin-top: 8px; display: none;" />
+          </div>
+
+          <div class="form-group">
+            <label>视频上传</label>
+            <div id="videoUploadArea" class="upload-area" onclick="document.getElementById('videoFile').click()">
+              <input type="file" id="videoFile" accept="video/*" style="display: none;" onchange="handleVideoUpload(this)" />
+              <div id="videoPreview" style="display: none;">
+                <video id="videoPreviewVideo" style="max-width: 200px; max-height: 150px; object-fit: cover;" controls></video>
+                <button onclick="clearVideo()">移除</button>
+              </div>
+              <div id="videoUploadHint">
+                <span class="upload-icon">🎬</span>
+                <p>点击或拖拽上传视频</p>
+                <p class="upload-hint">支持 MP4、WebM，最大 50MB</p>
+              </div>
+            </div>
+            <input type="text" id="video_url" placeholder="或输入视频URL" style="margin-top: 8px; display: none;" />
+          </div>
+
+          <div class="form-group">
+            <label>发布日期</label>
+            <input type="date" id="publish_date" />
+          </div>
+
+          <div id="formAlert"></div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-success">保存新闻</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const API_URL = '/api/news';
+    let currentLang = 'zh';
+    let editingId = null;
+
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (!result.success) {
+          window.location.href = 'admin-login.html';
+          return false;
+        }
+        
+        document.getElementById('userName').textContent = result.data.username;
+        return true;
+      } catch (error) {
+        window.location.href = 'admin-login.html';
+        return false;
+      }
+    }
+    
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (error) {}
+      window.location.href = 'admin-login.html';
+    }
+
+    async function loadNews() {
+      try {
+        const response = await fetch(API_URL + '?limit=100', { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          renderNewsList(result.data);
+        } else {
+          document.getElementById('newsList').innerHTML = `
+            <div class="empty-state">
+              <div class="icon">📭</div>
+              <div>暂无新闻数据</div>
+              <div style="font-size: 13px; margin-top: 8px;">点击上方按钮添加第一条新闻</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('newsList').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>加载失败，请稍后重试</div></div>`;
+      }
+    }
+
+    function renderNewsList(newsList) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>标题</th>
+              <th>分类</th>
+              <th>发布日期</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${newsList.map(item => `
+              <tr>
+                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</td>
+                <td><span class="badge badge-${item.category}">${getCategoryLabel(item.category)}</span></td>
+                <td>${formatDate(item.publish_date || item.created_at)}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" style="margin-right: 8px;" onclick="editNews(${item.id})">编辑</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteNews(${item.id})">删除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('newsList').innerHTML = html;
+    }
+
+    function getCategoryLabel(category) {
+      const labels = {
+        company: '公司动态',
+        service: '服务资讯',
+        policy: '政策解读',
+        industry: '行业动态'
+      };
+      return labels[category] || category;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '--';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function handleImageUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        showAlert('图片大小不能超过5MB', 'error');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('imagePreviewImg').src = e.target.result;
+        document.getElementById('imagePreview').style.display = 'block';
+        document.getElementById('imageUploadHint').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImage() {
+      document.getElementById('imageFile').value = '';
+      document.getElementById('imagePreview').style.display = 'none';
+      document.getElementById('imageUploadHint').style.display = 'block';
+      document.getElementById('image_url').value = '';
+    }
+
+    function handleVideoUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        showAlert('视频大小不能超过50MB', 'error');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('videoPreviewVideo').src = e.target.result;
+        document.getElementById('videoPreview').style.display = 'block';
+        document.getElementById('videoUploadHint').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearVideo() {
+      document.getElementById('videoFile').value = '';
+      document.getElementById('videoPreview').style.display = 'none';
+      document.getElementById('videoUploadHint').style.display = 'block';
+      document.getElementById('video_url').value = '';
+    }
+
+    function showAddModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = '添加新闻';
+      document.getElementById('newsForm').reset();
+      document.getElementById('formAlert').innerHTML = '';
+      switchLang('zh');
+      document.getElementById('newsModal').classList.add('show');
+    }
+
+    async function editNews(id) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          const news = result.data;
+          editingId = id;
+          document.getElementById('modalTitle').textContent = '编辑新闻';
+          document.getElementById('category').value = news.category || '';
+          document.getElementById('title_zh').value = news.title || '';
+          document.getElementById('summary_zh').value = news.summary || '';
+          document.getElementById('content_zh').value = news.content || '';
+          document.getElementById('image_url').value = news.image_url || '';
+          document.getElementById('publish_date').value = news.publish_date ? news.publish_date.split('T')[0] : '';
+          document.getElementById('formAlert').innerHTML = '';
+          switchLang('zh');
+          document.getElementById('newsModal').classList.add('show');
+        }
+      } catch (error) {
+        alert('加载新闻失败');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('newsModal').classList.remove('show');
+    }
+
+    function switchLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`.lang-tab:nth-child(${lang === 'zh' ? 1 : lang === 'en' ? 2 : 3})`).classList.add('active');
+      
+      ['title', 'summary', 'content'].forEach(field => {
+        document.querySelectorAll(`#${field}_zh, #${field}_en, #${field}_vi`).forEach(el => el.style.display = 'none');
+        document.getElementById(`${field}_${lang}`).style.display = 'block';
+      });
+    }
+
+    async function submitNews(event) {
+      event.preventDefault();
+      
+      const formData = new FormData();
+      formData.append('title_zh', document.getElementById('title_zh').value.trim());
+      formData.append('title_en', document.getElementById('title_en').value.trim());
+      formData.append('title_vi', document.getElementById('title_vi').value.trim());
+      formData.append('summary_zh', document.getElementById('summary_zh').value.trim());
+      formData.append('summary_en', document.getElementById('summary_en').value.trim());
+      formData.append('summary_vi', document.getElementById('summary_vi').value.trim());
+      formData.append('content_zh', document.getElementById('content_zh').value.trim());
+      formData.append('content_en', document.getElementById('content_en').value.trim());
+      formData.append('content_vi', document.getElementById('content_vi').value.trim());
+      formData.append('category', document.getElementById('category').value);
+      formData.append('publish_date', document.getElementById('publish_date').value);
+
+      const imageFile = document.getElementById('imageFile').files[0];
+      const videoFile = document.getElementById('videoFile').files[0];
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      } else {
+        formData.append('image_url', document.getElementById('image_url').value.trim());
+      }
+      
+      if (videoFile) {
+        formData.append('video', videoFile);
+      } else {
+        formData.append('video_url', document.getElementById('video_url').value.trim());
+      }
+
+      if (!formData.get('title_zh') || !formData.get('content_zh') || !formData.get('category')) {
+        showAlert('请填写必填字段（中文标题、内容和分类）', 'error');
+        return;
+      }
+
+      try {
+        const url = editingId ? `${API_URL}/${editingId}` : API_URL;
+        const method = editingId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
+          credentials: 'include',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert(result.message, 'success');
+          setTimeout(() => {
+            closeModal();
+            loadNews();
+          }, 1500);
+        } else {
+          showAlert(result.message || '操作失败', 'error');
+        }
+      } catch (error) {
+        showAlert('网络错误，请稍后重试', 'error');
+      }
+    }
+
+    function showAlert(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    }
+
+    async function deleteNews(id) {
+      if (!confirm('确定要删除这条新闻吗？')) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE', credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(result.message);
+          loadNews();
+        } else {
+          alert(result.message || '删除失败');
+        }
+      } catch (error) {
+        alert('删除失败，请稍后重试');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        loadNews();
+      }
+    });
+  </script>
+</body>
+</html>

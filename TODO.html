@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>重庆恒慈国际贸易官网 - 开发任务清单</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px 0;
+      text-align: center;
+      margin-bottom: 30px;
+      border-radius: 8px;
+    }
+    .header h1 { font-size: 32px; margin-bottom: 10px; }
+    .header p { opacity: 0.9; font-size: 16px; }
+    
+    /* Progress Bar */
+    .progress-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .progress-bar {
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    /* Phase Sections */
+    .phase {
+      background: white;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .phase-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .phase-header:hover { opacity: 0.9; }
+    .phase-title { font-size: 20px; font-weight: bold; }
+    .phase-meta { font-size: 14px; opacity: 0.9; }
+    .phase-toggle { font-size: 24px; transition: transform 0.3s; }
+    .phase.collapsed .phase-toggle { transform: rotate(-90deg); }
+    .phase-content { padding: 20px; }
+    .phase.collapsed .phase-content { display: none; }
+    
+    /* Task Items */
+    .task {
+      border-left: 4px solid #ddd;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: #f9f9f9;
+      border-radius: 0 8px 8px 0;
+      transition: all 0.3s;
+    }
+    .task:hover {
+      background: #f0f0f0;
+      border-left-color: #667eea;
+    }
+    .task.completed {
+      border-left-color: #4CAF50;
+      background: #e8f5e9;
+      opacity: 0.7;
+    }
+    .task-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .task-checkbox {
+      width: 20px;
+      height: 20px;
+      margin-right: 12px;
+      cursor: pointer;
+      accent-color: #667eea;
+    }
+    .task-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+    .task-priority {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .priority-high { background: #ffebee; color: #c62828; }
+    .priority-medium { background: #fff3e0; color: #ef6c00; }
+    .priority-low { background: #e3f2fd; color: #1565c0; }
+    .task-desc {
+      font-size: 14px;
+      color: #666;
+      margin-left: 32px;
+    }
+    .task-list {
+      list-style: none;
+      margin-left: 32px;
+      margin-top: 10px;
+    }
+    .task-list li {
+      padding: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .task-list li:before {
+      content: "• ";
+      color: #667eea;
+      font-weight: bold;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .quick-actions h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .btn-secondary:hover { background: #e0e0e0; }
+    
+    /* Timeline */
+    .timeline {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .timeline h3 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .timeline-item {
+      display: flex;
+      margin-bottom: 20px;
+      padding-left: 30px;
+      position: relative;
+    }
+    .timeline-item:before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: -20px;
+      width: 2px;
+      background: #e0e0e0;
+    }
+    .timeline-item:last-child:before { display: none; }
+    .timeline-dot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #667eea;
+    }
+    .timeline-content {
+      flex: 1;
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .timeline-date {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+    .timeline-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .timeline-desc {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header h1 { font-size: 24px; }
+      .phase-title { font-size: 18px; }
+      .task-header { flex-direction: column; align-items: flex-start; }
+      .task-priority { margin-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🚢 重庆恒慈国际贸易官网</h1>
+      <p>开发任务清单 - 项目进度跟踪</p>
+    </div>
+    
+    <!-- Progress Section -->
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill">0%</div>
+      </div>
+      <div class="progress-stats">
+        <span id="completedCount">已完成: 0/0</span>
+        <span id="percentText">进度: 0%</span>
+      </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3>⚡ 快速操作</h3>
+      <div class="action-buttons">
+        <button class="btn btn-primary" onclick="expandAll()">展开所有阶段</button>
+        <button class="btn btn-secondary" onclick="collapseAll()">折叠所有阶段</button>
+        <button class="btn btn-secondary" onclick="resetProgress()">重置进度</button>
+        <button class="btn btn-secondary" onclick="saveProgress()">保存进度</button>
+      </div>
+    </div>
+    
+    <!-- Timeline -->
+    <div class="timeline">
+      <h3>📅 建议时间安排</h3>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">第1-2周</div>
+          <div class="timeline-title">第一阶段：核心功能完善</div>
+          <div class="timeline-desc">完成在线询价、货物追踪、新闻资讯系统的后端集成</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">第3-5周</div>
+          <div class="timeline-title">第二阶段：后台管理系统增强</div>
+          <div class="timeline-desc">完善管理员功能模块和数据报表系统</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">第6-7周</div>
+          <div class="timeline-title">第三阶段：用户体验优化</div>
+          <div class="timeline-desc">SEO优化、移动端适配、性能优化</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-date">第8-11周</div>
+          <div class="timeline-title">第四阶段：高级功能扩展</div>
+          <div class="timeline-desc">智能推荐、会员系统、多币种结算等高级功能</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Phase 1: High Priority -->
+    <div class="phase" id="phase1">
+      <div class="phase-header" onclick="togglePhase('phase1')">
+        <div>
+          <div class="phase-title">🎯 第一阶段：核心功能完善（高优先级）</div>
+          <div class="phase-meta">预计工期：2周 | 开始时间：立即</div>
+        </div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-content">
+        
+        <!-- Task 1.1 -->
+        <div class="task completed" data-task-id="1.1">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">1.1 在线询价系统集成</span>
+            <span class="task-priority priority-high">高优先级</span>
+          </div>
+          <div class="task-desc">连接 inquiry.html 到后端 API，实现完整的询价流程</div>
+          <ul class="task-list">
+            <li>创建后端 API 接口 /api/inquiry（POST）</li>
+            <li>实现表单验证（必填字段、格式校验）</li>
+            <li>添加提交成功反馈页面或弹窗</li>
+            <li>集成邮件通知功能（自动发送邮件给客服）</li>
+            <li>测试完整询价流程</li>
+          </ul>
+        </div>
+        
+        <!-- Task 1.2 -->
+        <div class="task completed" data-task-id="1.2">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">1.2 货物追踪系统集成</span>
+            <span class="task-priority priority-high">高优先级</span>
+          </div>
+          <div class="task-desc">连接 tracking.html 到后端 API，实现运单查询功能</div>
+          <ul class="task-list">
+            <li>创建后端 API 接口 /api/tracking/:trackingNumber（GET）</li>
+            <li>实现运单号查询逻辑</li>
+            <li>显示物流轨迹时间线（可视化展示）</li>
+            <li>添加未找到运单号的友好提示</li>
+            <li>支持多个示例单号快速体验</li>
+          </ul>
+        </div>
+        
+        <!-- Task 1.3 -->
+        <div class="task completed" data-task-id="1.3">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">1.3 新闻资讯系统集成</span>
+            <span class="task-priority priority-high">高优先级</span>
+          </div>
+          <div class="task-desc">连接 news.html 到后端 API，实现新闻列表和详情</div>
+          <ul class="task-list">
+            <li>创建后端 API 接口 /api/news（GET，支持分页和分类筛选）</li>
+            <li>实现新闻列表加载和分页功能</li>
+            <li>添加新闻详情页（点击列表项跳转）</li>
+            <li>实现"加载更多"按钮功能</li>
+            <li>添加新闻订阅功能（邮箱订阅）</li>
+          </ul>
+        </div>
+        
+        <!-- Task 1.4 -->
+        <div class="task completed" data-task-id="1.4">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">1.4 在线客服系统优化</span>
+            <span class="task-priority priority-high">高优先级</span>
+          </div>
+          <div class="task-desc">完善聊天窗口功能和用户体验</div>
+          <ul class="task-list">
+            <li>完善 js/chat.js 的对话逻辑</li>
+            <li>添加常见问题快捷回复按钮</li>
+            <li>实现聊天记录本地存储（localStorage）</li>
+            <li>优化聊天窗口UI（滚动、动画效果）</li>
+            <li>添加离线消息提示</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Phase 2: Medium Priority -->
+    <div class="phase" id="phase2">
+      <div class="phase-header" onclick="togglePhase('phase2')">
+        <div>
+          <div class="phase-title">🎯 第二阶段：后台管理系统增强（中优先级）</div>
+          <div class="phase-meta">预计工期：3周 | 开始时间：第3周</div>
+        </div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-content">
+        
+        <!-- Task 2.1 -->
+        <div class="task completed" data-task-id="2.1">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.1 仪表盘统计功能</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-dashboard.html 的数据统计展示</div>
+          <ul class="task-list">
+            <li>今日订单数、询价数、客户数统计</li>
+            <li>月度业务趋势图表（使用 Chart.js）</li>
+            <li>热门线路TOP5排行榜</li>
+            <li>实时数据刷新功能</li>
+          </ul>
+        </div>
+        
+        <!-- Task 2.2 -->
+        <div class="task completed" data-task-id="2.2">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.2 订单管理功能</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-orders.html 的订单管理功能</div>
+          <ul class="task-list">
+            <li>订单列表查看、筛选、搜索功能</li>
+            <li>订单详情编辑页面</li>
+            <li>订单状态更新（待处理→运输中→已完成）</li>
+            <li>批量操作功能（批量导出、批量删除）</li>
+          </ul>
+        </div>
+        
+        <!-- Task 2.3 -->
+        <div class="task completed" data-task-id="2.3">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.3 询价管理功能</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-inquiry.html 的询价管理功能</div>
+          <ul class="task-list">
+            <li>询价列表查看和筛选</li>
+            <li>报价回复功能（填写报价并发送）</li>
+            <li>询价转订单功能</li>
+            <li>询价状态标记（已处理/未处理）</li>
+          </ul>
+        </div>
+        
+        <!-- Task 2.4 -->
+        <div class="task completed" data-task-id="2.4">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.4 客户管理功能</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-customers.html 的客户管理功能</div>
+          <ul class="task-list">
+            <li>客户信息CRUD（增删改查）</li>
+            <li>客户分组标签功能</li>
+            <li>联系记录管理</li>
+            <li>客户历史订单查看</li>
+          </ul>
+        </div>
+        
+        <!-- Task 2.5 -->
+        <div class="task completed" data-task-id="2.5">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.5 角色权限管理</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-roles.html 的角色权限管理</div>
+          <ul class="task-list">
+            <li>角色创建、编辑、删除功能</li>
+            <li>权限分配（菜单级、操作级）</li>
+            <li>用户角色绑定功能</li>
+            <li>权限验证中间件</li>
+          </ul>
+        </div>
+        
+        <!-- Task 2.6 -->
+        <div class="task completed" data-task-id="2.6">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">2.6 数据报表系统</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">完善 admin-reports.html 的数据报表功能</div>
+          <ul class="task-list">
+            <li>收入统计报表（日/周/月/年）</li>
+            <li>线路运营分析报表</li>
+            <li>客户来源分析报表</li>
+            <li>导出Excel/PDF功能</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Phase 3: Medium Priority -->
+    <div class="phase" id="phase3">
+      <div class="phase-header" onclick="togglePhase('phase3')">
+        <div>
+          <div class="phase-title">🎯 第三阶段：用户体验优化（中优先级）</div>
+          <div class="phase-meta">预计工期：2周 | 开始时间：第6周</div>
+        </div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-content">
+        
+        <!-- Task 3.1 -->
+        <div class="task completed" data-task-id="3.1">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">3.1 SEO优化</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">提升网站在搜索引擎中的排名</div>
+          <ul class="task-list">
+            <li>每个页面独立的 title、description、keywords</li>
+            <li>Open Graph 标签（Facebook分享优化）</li>
+            <li>Twitter Card 标签</li>
+            <li>JSON-LD 结构化数据（组织信息、服务项）</li>
+            <li>BreadcrumbList 面包屑导航标记</li>
+            <li>生成 sitemap.xml（动态更新）</li>
+            <li>robots.txt 优化</li>
+          </ul>
+        </div>
+        
+        <!-- Task 3.2 -->
+        <div class="task completed" data-task-id="3.2">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">3.2 性能优化</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">提升网站加载速度和用户体验</div>
+          <ul class="task-list">
+            <li>图片懒加载（lazy loading）</li>
+            <li>CSS/JS 压缩和合并</li>
+            <li>CDN加速配置</li>
+            <li>浏览器缓存策略优化</li>
+            <li>Gzip/Brotli 压缩启用</li>
+            <li>首屏加载时间优化（目标<2s）</li>
+            <li>Lighthouse 定期审计</li>
+          </ul>
+        </div>
+        
+        <!-- Task 3.3 -->
+        <div class="task completed" data-task-id="3.3">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">3.3 移动端适配优化</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">优化手机端用户体验</div>
+          <ul class="task-list">
+            <li>手机端导航菜单汉堡按钮优化</li>
+            <li>表格横向滚动适配</li>
+            <li>触摸友好的按钮尺寸（最小44x44px）</li>
+            <li>响应式图片优化</li>
+            <li>移动端字体大小调整</li>
+            <li>横屏/竖屏适配测试</li>
+          </ul>
+        </div>
+        
+        <!-- Task 3.4 -->
+        <div class="task" data-task-id="3.4">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">3.4 PWA支持（可选）</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">将网站升级为渐进式Web应用</div>
+          <ul class="task-list">
+            <li>manifest.json 配置文件</li>
+            <li>service worker 离线缓存</li>
+            <li>添加到主屏幕功能</li>
+            <li>离线页面提示</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Phase 4: Low Priority -->
+    <div class="phase" id="phase4">
+      <div class="phase-header" onclick="togglePhase('phase4')">
+        <div>
+          <div class="phase-title"> 第四阶段：高级功能扩展（低优先级）</div>
+          <div class="phase-meta">预计工期：4周 | 开始时间：第8周</div>
+        </div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-content">
+        
+        <!-- Task 4.1 -->
+        <div class="task completed" data-task-id="4.1">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">4.1 智能推荐系统</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">根据用户需求智能推荐最优物流方案</div>
+          <ul class="task-list">
+            <li>根据起运地/目的地自动推荐最优线路</li>
+            <li>价格对比展示（多条线路对比）</li>
+            <li>时效预估算法</li>
+            <li>运费计算器（实时计算+附加费明细）</li>
+            <li>优惠券/折扣码支持</li>
+          </ul>
+        </div>
+        
+        <!-- Task 4.2 -->
+        <div class="task" data-task-id="4.2">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">4.2 会员系统</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">建立用户注册登录和会员中心</div>
+          <ul class="task-list">
+            <li>用户注册/登录功能（邮箱/手机号）</li>
+            <li>密码找回功能</li>
+            <li>第三方登录（微信、Google）</li>
+            <li>会员中心页面</li>
+            <li>历史订单查询</li>
+            <li>收藏夹功能</li>
+            <li>积分/等级体系</li>
+          </ul>
+        </div>
+        
+        <!-- Task 4.3 -->
+        <div class="task" data-task-id="4.3">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">4.3 多币种结算</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">支持多种货币支付和汇率转换</div>
+          <ul class="task-list">
+            <li>人民币/美元/泰铢/越南盾实时汇率</li>
+            <li>自动换算显示</li>
+            <li>历史汇率查询</li>
+            <li>多币种支付接口集成</li>
+          </ul>
+        </div>
+        
+        <!-- Task 4.4 -->
+        <div class="task" data-task-id="4.4">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">4.4 错误监控与日志</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">建立完善的错误监控和日志系统</div>
+          <ul class="task-list">
+            <li>Sentry 错误追踪集成</li>
+            <li>JavaScript运行时错误捕获</li>
+            <li>API请求失败日志</li>
+            <li>Google Analytics 集成</li>
+            <li>百度统计集成</li>
+            <li>用户行为热力图</li>
+          </ul>
+        </div>
+        
+        <!-- Task 4.5 -->
+        <div class="task" data-task-id="4.5">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">4.5 自动化部署（CI/CD）</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">建立自动化构建和部署流程</div>
+          <ul class="task-list">
+            <li>GitHub Actions 自动部署脚本</li>
+            <li>代码提交后自动构建</li>
+            <li>部署前自动测试</li>
+            <li>数据库每日自动备份</li>
+            <li>静态文件每周备份</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Technical Debt -->
+    <div class="phase" id="phase5">
+      <div class="phase-header" onclick="togglePhase('phase5')">
+        <div>
+          <div class="phase-title">🔧 技术债务清理（持续进行）</div>
+          <div class="phase-meta">贯穿整个项目周期</div>
+        </div>
+        <div class="phase-toggle">▼</div>
+      </div>
+      <div class="phase-content">
+        
+        <!-- Task 5.1 -->
+        <div class="task" data-task-id="5.1">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">5.1 JavaScript模块化重构</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">提升代码可维护性</div>
+          <ul class="task-list">
+            <li>将 js/main.js 拆分为多个模块</li>
+            <li>使用 ES6 import/export 语法</li>
+            <li>提取公共工具函数</li>
+            <li>添加单元测试</li>
+          </ul>
+        </div>
+        
+        <!-- Task 5.2 -->
+        <div class="task" data-task-id="5.2">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">5.2 CSS架构优化</span>
+            <span class="task-priority priority-medium">中优先级</span>
+          </div>
+          <div class="task-desc">引入CSS预处理器和组件化样式</div>
+          <ul class="task-list">
+            <li>引入 Sass/Less 预处理器</li>
+            <li>组件化样式管理</li>
+            <li>移除冗余样式</li>
+            <li>统一命名规范（BEM）</li>
+          </ul>
+        </div>
+        
+        <!-- Task 5.3 -->
+        <div class="task" data-task-id="5.3">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" onchange="updateTaskStatus(this)">
+            <span class="task-title">5.3 TypeScript迁移（可选）</span>
+            <span class="task-priority priority-low">低优先级</span>
+          </div>
+          <div class="task-desc">逐步将关键模块转为TypeScript</div>
+          <ul class="task-list">
+            <li>配置TypeScript环境</li>
+            <li>逐步迁移核心模块</li>
+            <li>添加类型定义文件</li>
+            <li>编译配置优化</li>
+          </ul>
+        </div>
+        
+        <!-- Task 5.4 -->
+        <div class="task completed" data-task-id="5.4">
+          <div class="task-header">
+            <input type="checkbox" class="task-checkbox" checked onchange="updateTaskStatus(this)">
+            <span class="task-title">5.4 安全性加固</span>
+            <span class="task-priority priority-high">高优先级</span>
+          </div>
+          <div class="task-desc">提升网站安全防护能力</div>
+          <ul class="task-list">
+            <li>XSS防护（输入过滤、HTML实体编码）</li>
+            <li>CSRF防护（token验证）</li>
+            <li>HTTPS强制（Nginx配置SSL证书）</li>
+            <li>SQL注入防护（参数化查询）</li>
+            <li>敏感数据加密存储</li>
+            <li>定期安全扫描</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
+  
+  <script>
+    // Load saved progress on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      loadProgress();
+    });
+    
+    // Toggle phase collapse/expand
+    function togglePhase(phaseId) {
+      const phase = document.getElementById(phaseId);
+      phase.classList.toggle('collapsed');
+    }
+    
+    // Expand all phases
+    function expandAll() {
+      document.querySelectorAll('.phase').forEach(phase => {
+        phase.classList.remove('collapsed');
+      });
+    }
+    
+    // Collapse all phases
+    function collapseAll() {
+      document.querySelectorAll('.phase').forEach(phase => {
+        phase.classList.add('collapsed');
+      });
+    }
+    
+    // Update task status
+    function updateTaskStatus(checkbox) {
+      const task = checkbox.closest('.task');
+      if (checkbox.checked) {
+        task.classList.add('completed');
+      } else {
+        task.classList.remove('completed');
+      }
+      updateProgress();
+      saveProgress();
+    }
+    
+    // Calculate and update progress
+    function updateProgress() {
+      const totalTasks = document.querySelectorAll('.task').length;
+      const completedTasks = document.querySelectorAll('.task.completed').length;
+      const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressFill').textContent = percent + '%';
+      document.getElementById('completedCount').textContent = `已完成: ${completedTasks}/${totalTasks}`;
+      document.getElementById('percentText').textContent = `进度: ${percent}%`;
+    }
+    
+    // Save progress to localStorage
+    function saveProgress() {
+      const tasks = [];
+      document.querySelectorAll('.task').forEach(task => {
+        const taskId = task.dataset.taskId;
+        const isCompleted = task.classList.contains('completed');
+        tasks.push({ id: taskId, completed: isCompleted });
+      });
+      localStorage.setItem('hengci-todo-progress', JSON.stringify(tasks));
+      console.log('✅ 进度已保存');
+    }
+    
+    // Load progress from localStorage
+    function loadProgress() {
+      const saved = localStorage.getItem('hengci-todo-progress');
+      if (saved) {
+        try {
+          const tasks = JSON.parse(saved);
+          tasks.forEach(task => {
+            const taskEl = document.querySelector(`.task[data-task-id="${task.id}"]`);
+            if (taskEl && task.completed) {
+              taskEl.classList.add('completed');
+              const checkbox = taskEl.querySelector('.task-checkbox');
+              if (checkbox) checkbox.checked = true;
+            }
+          });
+          updateProgress();
+          console.log('✅ 进度已加载');
+        } catch (e) {
+          console.error('加载进度失败:', e);
+        }
+      }
+    }
+    
+    // Reset all progress
+    function resetProgress() {
+      if (confirm('确定要重置所有进度吗？')) {
+        document.querySelectorAll('.task').forEach(task => {
+          task.classList.remove('completed');
+          const checkbox = task.querySelector('.task-checkbox');
+          if (checkbox) checkbox.checked = false;
+        });
+        localStorage.removeItem('hengci-todo-progress');
+        updateProgress();
+        console.log('✅ 进度已重置');
+      }
+    }
+    
+    // Initialize progress on page load
+    updateProgress();
+  </script>
+</body>
+</html>
