@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>货物追踪 - 重庆恒慈国际贸易有限公司</title>
+  <meta name="description" content="重庆恒慈国际贸易有限公司货物追踪系统，输入运单号即时查询货物物流轨迹。" />
+  <meta name="keywords" content="货物追踪,物流查询,运单号查询,跨境物流追踪,快递查询" />
+  <meta name="author" content="重庆恒慈国际贸易有限公司" />
+  <link rel="canonical" href="https://hengciglobal.com/tracking.html" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="货物追踪 - 重庆恒慈国际贸易有限公司" />
+  <meta property="og:description" content="重庆恒慈国际贸易有限公司货物追踪系统，输入运单号即时查询货物物流轨迹。" />
+  <meta property="og:url" content="https://hengciglobal.com/tracking.html" />
+  <meta property="og:site_name" content="重庆恒慈国际贸易有限公司" />
+  <meta property="og:locale" content="zh_CN" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="货物追踪 - 重庆恒慈国际贸易有限公司" />
+  <meta name="twitter:description" content="重庆恒慈国际贸易有限公司货物追踪系统，输入运单号即时查询货物物流轨迹。" />
+  <!-- JSON-LD 结构化数据 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "重庆恒慈国际贸易有限公司",
+    "alternateName": "CHONGQING HENGCI INTERNATIONAL TRADE CO., LTD.",
+    "url": "https://hengciglobal.com",
+    "description": "重庆恒慈国际贸易有限公司货物追踪系统，输入运单号即时查询货物物流轨迹。",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+86-13648336221",
+      "contactType": "customer service",
+      "availableLanguage": ["Chinese", "English", "Vietnamese"]
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "重庆",
+      "addressCountry": "CN"
+    }
+  }
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/chat.css" />
+  <script src="js/loading.js"></script>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">🚢</div>
+      <div>重庆恒慈国际贸易有限公司<span class="sub">CHONGQING HENGCI INTERNATIONAL TRADE CO., LTD.</span></div>
+    </a>
+    <ul class="nav-menu" id="navMenu">
+      <li><a href="index.html" data-i18n="nav.home">首页</a></li>
+      <li class="dropdown">
+        <a href="#" data-i18n="nav.services">业务介绍 ▾</a>
+        <ul class="dropdown-menu">
+          <li><a href="service-rail.html" data-i18n="services.rail">🚂 中老铁路陆运</a></li>
+          <li><a href="service-road.html" data-i18n="services.road">🚛 中老公路运输</a></li>
+          <li><a href="service-thai-rail.html" data-i18n="services.thaiRail">🚂 中老泰铁路联运</a></li>
+          <li><a href="service-viet-rail.html" data-i18n="services.vietRail">🚂 中越铁路</a></li>
+          <li><a href="service-thai.html" data-i18n="services.thai">🚢 泰国海运</a></li>
+          <li><a href="service-viet.html" data-i18n="services.viet">⚓ 越南海运</a></li>
+        </ul>
+      </li>
+      <li><a href="inquiry.html" data-i18n="nav.inquiry">在线询价</a></li>
+      <li><a href="tracking.html" class="active" data-i18n="nav.tracking">货物追踪</a></li>
+      <li><a href="about.html" data-i18n="nav.about">关于我们</a></li>
+      <li><a href="news.html" data-i18n="nav.news">新闻资讯</a></li>
+      <li><a href="inquiry.html" class="nav-cta" data-i18n="nav.cta">立即询价</a></li>
+    </ul>
+    <div class="lang-switch" id="langSwitch">
+      <button class="lang-btn active" data-lang="zh" data-i18n="lang.zh">中文</button>
+      <button class="lang-btn" data-lang="en" data-i18n="lang.en">EN</button>
+      <button class="lang-btn" data-lang="vi" data-i18n="lang.vi">VN</button>
+    </div>
+    <div class="nav-toggle" id="navToggle" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Page Hero -->
+<div class="page-hero default">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home">首页</a> / <span data-i18n="nav.tracking">货物追踪</span>
+    </div>
+    <h1 data-i18n="tracking.title">📦 货物追踪</h1>
+    <p data-i18n="tracking.subtitle">输入运单号，实时查询货物运输状态</p>
+  </div>
+</div>
+
+<!-- 搜索区域 -->
+<section class="section">
+  <div class="container">
+    <div class="track-search-box">
+      <h2 data-i18n="tracking.title">查询货物追踪信息</h2>
+      <p style="font-size:14px;color:var(--gray-600);margin-bottom:20px;" data-i18n="tracking.instruction">请输入恒慈国际贸易运单号（格式：SP+8位数字，如 SP20240001）</p>
+      <div class="track-input-row">
+        <input type="text" class="form-control" id="trackingInput" placeholder="" data-i18n-placeholder="tracking.placeholder" />
+        <button class="btn btn-blue" onclick="trackShipment()" style="white-space:nowrap;padding:13px 28px;" data-i18n="tracking.search">🔍 查询</button>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--gray-600);" data-i18n="tracking.demo">示例单号快速体验：</span>
+        <a href="#" onclick="quickTrack('SP260001')" style="font-size:12px;color:var(--primary);font-weight:600;" data-i18n="tracking.demo1">SP260001（运输中）</a>
+        <a href="#" onclick="quickTrack('SP260009')" style="font-size:12px;color:var(--primary);font-weight:600;" data-i18n="tracking.demo2">SP260009（已签收）</a>
+        <a href="#" onclick="quickTrack('SP260005')" style="font-size:12px;color:var(--primary);font-weight:600;" data-i18n="tracking.demo3">SP260005（海运途中）</a>
+      </div>
+    </div>
+
+    <!-- 查询结果 -->
+    <div class="track-result" id="trackResult">
+      <!-- 基础信息 -->
+      <div class="track-info-bar" id="trackInfoBar">
+        <div class="track-info-item">
+          <strong data-i18n="tracking.trackingNo">运单号</strong>
+          <span id="ti-num">--</span>
+        </div>
+        <div class="track-info-item">
+          <strong data-i18n="tracking.transportType">运输方式</strong>
+          <span id="ti-type">--</span>
+        </div>
+        <div class="track-info-item">
+          <strong data-i18n="tracking.status">运输状态</strong>
+          <span id="ti-status">--</span>
+        </div>
+        <div class="track-info-item">
+          <strong data-i18n="tracking.eta">预计到达</strong>
+          <span id="ti-eta">--</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;" class="track-detail-layout">
+        <!-- 时间线 -->
+        <div class="timeline" id="trackTimeline">
+          <h3 data-i18n="tracking.timeline">📍 物流轨迹</h3>
+          <div class="timeline-list" id="timelineList">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 货物信息 -->
+        <div>
+          <div class="info-card" id="cargoInfoCard">
+            <h4 data-i18n="tracking.cargoInfo">📦 货物信息</h4>
+            <!-- 动态生成 -->
+          </div>
+          <div class="info-card" style="margin-top:16px;">
+            <h4 data-i18n="tracking.contactCS">📞 联系专属客服</h4>
+            <div style="font-size:13px;color:var(--gray-800);line-height:1.8;">
+              <div data-i18n="tracking.csPhone">客服电话：<strong>13648336221</strong></div>
+              <div data-i18n="tracking.csHours">工作时间：周一至周五 09:00-18:00</div>
+            </div>
+            <button class="btn btn-blue" onclick="openChat()" style="width:100%;justify-content:center;margin-top:14px;" data-i18n="tracking.chat">💬 在线客服咨询</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 未找到提示 -->
+    <div id="trackNotFound" style="display:none;text-align:center;padding:60px 20px;">
+      <div style="font-size:60px;margin-bottom:16px;">🔍</div>
+      <h3 style="color:var(--gray-800);margin-bottom:10px;" data-i18n="tracking.notFound">未找到该运单号</h3>
+      <p style="color:var(--gray-600);margin-bottom:24px;" data-i18n="tracking.notFoundDesc">请检查运单号是否正确，或联系客服查询</p>
+      <button class="btn btn-blue" onclick="openChat()" data-i18n="tracking.chat">💬 联系在线客服</button>
+    </div>
+
+    <!-- 说明区块 -->
+    <div style="margin-top:48px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;" id="trackTips">
+      <div style="text-align:center;padding:28px;background:var(--gray-100);border-radius:var(--radius);">
+        <div style="font-size:36px;margin-bottom:12px;">📱</div>
+        <h4 style="color:var(--gray-800);margin-bottom:8px;" data-i18n="tracking.tip1.title">运单号在哪里找？</h4>
+        <p style="font-size:13px;color:var(--gray-600);" data-i18n="tracking.tip1.desc">运单号在下单确认邮件或微信推送消息中，格式为 SP + 8位数字</p>
+      </div>
+      <div style="text-align:center;padding:28px;background:var(--gray-100);border-radius:var(--radius);">
+        <div style="font-size:36px;margin-bottom:12px;">🔄</div>
+        <h4 style="color:var(--gray-800);margin-bottom:8px;" data-i18n="tracking.tip2.title">轨迹多久更新？</h4>
+        <p style="font-size:13px;color:var(--gray-600);" data-i18n="tracking.tip2.desc">关键节点实时更新，在途状态每6小时刷新一次</p>
+      </div>
+      <div style="text-align:center;padding:28px;background:var(--gray-100);border-radius:var(--radius);">
+        <div style="font-size:36px;margin-bottom:12px;">❓</div>
+        <h4 style="color:var(--gray-800);margin-bottom:8px;" data-i18n="tracking.tip3.title">轨迹长时间未更新？</h4>
+        <p style="font-size:13px;color:var(--gray-600);" data-i18n="tracking.tip3.desc">超过24小时无更新请联系客服，我们将第一时间核查</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer class="footer">
+  <div class="footer-main">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4 data-i18n="footer.services">业务服务</h4>
+          <ul>
+            <li><a href="service-rail.html" data-i18n="services.railTitle">中老铁路陆运</a></li>
+            <li><a href="service-thai.html" data-i18n="services.thaiTitle">泰国海运</a></li>
+            <li><a href="service-viet.html" data-i18n="services.vietTitle">越南海运</a></li>
+            <li><a href="inquiry.html" data-i18n="nav.inquiry">在线询价</a></li>
+            <li><a href="tracking.html" data-i18n="nav.tracking">货物追踪</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footer.about">关于我们</h4>
+          <ul>
+            <li><a href="about.html" data-i18n="footer.company">公司简介</a></li>
+            <li><a href="about.html#team" data-i18n="footer.team">团队介绍</a></li>
+            <li><a href="news.html" data-i18n="nav.news">新闻资讯</a></li>
+            <li><a href="about.html#cert" data-i18n="footer.cert">资质认证</a></li>
+            <li><a href="#" data-i18n="footer.join">加入我们</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="footer.contact">联系方式</h4>
+          <ul class="footer-contact">
+            <li><span class="icon">📞</span><span>13648336221</span></li>
+            <li><span class="icon">📱</span><span>+8562091509720（WhatsApp）</span></li>
+            <li><span class="icon">✉️</span><span>z13648336221@Gmail.com</span></li>
+            <li><span class="icon">📍</span><span data-i18n="footer.addressText">重庆市南岸区</span></li>
+            <li><span class="icon">🕐</span><span data-i18n="footer.workHours">工作日 09:00–18:00</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="footer-bottom">
+      <div class="footer-logo">🚢 重庆恒慈国际贸易有限公司</div>
+      <span data-i18n="footer.copyright">© 2026 重庆恒慈国际贸易有限公司有限公司 版权所有</span>
+      <span>渝ICP备XXXXXXXX号</span>
+    </div>
+  </div>
+</footer>
+
+
+
+<script src="lang/zh.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/vi.js"></script>
+<script src="lang/all.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+<script src="js/tracking.js"></script>
+<script src="js/chat.js"></script>
+</body>
+</html>

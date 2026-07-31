@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>报价管理 - 重庆恒慈国际贸易有限公司</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">🚢 恒慈国际贸易管理</div>
+    <nav>
+      <a href="admin-dashboard.html">📊 仪表盘</a>
+      <a href="admin.html">📰 新闻管理</a>
+      <a href="admin-orders.html">📦 订单管理</a>
+      <a href="admin-customers.html">👥 客户管理</a>
+      <a href="admin-quotes.html" class="active">💰 报价管理</a>
+      <a href="admin-inquiry.html">📋 询价管理</a>
+      <a href="admin-chat.html">💬 客服管理</a>
+      <a href="admin-reports.html">📈 数据分析</a>
+      <a href="admin-logs.html">🔒 登录日志</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>💰 报价管理</h1>
+      <div class="user-info">
+        <span class="user-name" id="userName">管理员</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">报价列表</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="exportQuotes()">📥 导出CSV</button>
+          <button class="btn btn-primary" onclick="showAddModal()">+ 添加报价</button>
+        </div>
+      </div>
+      
+      <div class="search-bar">
+        <select id="serviceFilter" onchange="handleFilter()">
+          <option value="">全部服务</option>
+          <option value="railway">🚂 中老铁路陆运</option>
+          <option value="thailand-sea">🚢 泰国海运</option>
+          <option value="vietnam-sea">⚓ 越南海运</option>
+        </select>
+        <button class="btn btn-secondary" onclick="refreshList()">刷新</button>
+      </div>
+
+      <div id="quoteList">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📜 报价历史记录</div>
+      </div>
+      <div id="quoteHistory">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加/编辑报价弹窗 -->
+  <div class="modal-overlay" id="quoteModal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">添加报价</div>
+        <span class="modal-close" onclick="closeModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <form id="quoteForm" onsubmit="submitQuote(event)">
+          <div class="form-group">
+            <label>报价名称 *</label>
+            <input type="text" id="name" required placeholder="例如：中老铁路标准报价">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>运输方式 *</label>
+              <select id="service_code" required>
+                <option value="">请选择</option>
+                <option value="railway">🚂 中老铁路陆运</option>
+                <option value="thailand-sea">🚢 泰国海运</option>
+                <option value="vietnam-sea">⚓ 越南海运</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>价格单位 *</label>
+              <select id="price_unit" required>
+                <option value="CBM">每 CBM（立方米）</option>
+                <option value="KG">每 KG（公斤）</option>
+                <option value="TEU">每 TEU（标准箱）</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>起运城市</label>
+              <select id="origin_city">
+                <option value="">不限</option>
+                <option value="GZ">广州</option>
+                <option value="SZ">深圳</option>
+                <option value="KM">昆明</option>
+                <option value="DG">东莞</option>
+                <option value="FO">佛山</option>
+                <option value="YW">义乌</option>
+                <option value="SH">上海</option>
+                <option value="NJ">宁波</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>目的城市</label>
+              <select id="dest_city">
+                <option value="">不限</option>
+                <option value="VTE">老挝·万象</option>
+                <option value="LPQ">老挝·琅勃拉邦</option>
+                <option value="BKK">泰国·曼谷</option>
+                <option value="CM">泰国·清迈</option>
+                <option value="HCM">越南·胡志明市</option>
+                <option value="HAN">越南·河内</option>
+                <option value="DAN">越南·岘港</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>最低重量 (KG)</label>
+              <input type="number" id="min_weight" min="0" placeholder="留空表示无限制">
+            </div>
+            <div class="form-group">
+              <label>最高重量 (KG)</label>
+              <input type="number" id="max_weight" min="0" placeholder="留空表示无限制">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>基础单价 (元) *</label>
+              <input type="number" id="base_price" required min="0" step="0.01" placeholder="请输入单价">
+            </div>
+            <div class="form-group">
+              <label>清关费用 (元)</label>
+              <input type="number" id="customs_fee" min="0" placeholder="留空表示不包含">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>保险费率</label>
+              <input type="number" id="insurance_rate" min="0" max="1" step="0.0001" placeholder="例如：0.0035">
+            </div>
+            <div class="form-group">
+              <label>运输时效 (天)</label>
+              <input type="number" id="transit_days" min="1" placeholder="预计运输天数">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>报价有效期 (天)</label>
+              <input type="number" id="valid_days" min="1" value="7" placeholder="默认为7天">
+            </div>
+            <div class="form-group">
+              <label>状态</label>
+              <select id="status">
+                <option value="active">启用</option>
+                <option value="inactive">停用</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>备注说明</label>
+            <textarea id="remarks" placeholder="其他说明信息"></textarea>
+          </div>
+
+          <div id="formAlert"></div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-success">保存报价</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const API_URL = '/api/quotes';
+    let editingId = null;
+    let quoteDataCache = [];
+
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (!result.success) {
+          window.location.href = 'admin-login.html';
+          return false;
+        }
+        
+        document.getElementById('userName').textContent = result.data.username;
+        return true;
+      } catch (error) {
+        window.location.href = 'admin-login.html';
+        return false;
+      }
+    }
+    
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (error) {}
+      window.location.href = 'admin-login.html';
+    }
+
+    async function loadQuotes() {
+      try {
+        const service_code = document.getElementById('serviceFilter').value;
+        
+        const url = new URL(API_URL);
+        if (service_code) url.searchParams.set('service_code', service_code);
+        
+        const response = await fetch(url, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          quoteDataCache = result.data;
+          renderQuoteList(result.data);
+        } else {
+          quoteDataCache = [];
+          document.getElementById('quoteList').innerHTML = `
+            <div class="empty-state">
+              <div class="icon">📭</div>
+              <div>暂无报价数据</div>
+              <div style="font-size: 13px; margin-top: 8px;">点击上方按钮添加报价方案</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('quoteList').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>加载失败，请稍后重试</div></div>`;
+      }
+    }
+
+    function exportQuotes() {
+      if (quoteDataCache.length === 0) {
+        alert('没有可导出的报价数据');
+        return;
+      }
+
+      const headers = ['报价名称', '运输方式', '起运城市', '目的城市', '基础单价', '价格单位', '运输时效', '有效期', '状态', '创建日期'];
+      const csvContent = [
+        headers.join(','),
+        ...quoteDataCache.map(quote => [
+          `"${(quote.name || '').replace(/"/g, '""')}"`,
+          quote.service_label || '',
+          getCityLabel(quote.origin_city),
+          getCityLabel(quote.dest_city),
+          quote.base_price,
+          quote.price_unit,
+          quote.transit_days || '',
+          quote.valid_days + '天',
+          quote.status === 'active' ? '启用' : '停用',
+          formatDate(quote.created_at)
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `报价导出_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+
+    function renderQuoteList(quotes) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>报价名称</th>
+              <th>运输方式</th>
+              <th>路线</th>
+              <th>单价(元)</th>
+              <th>时效(天)</th>
+              <th>有效期</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quotes.map(quote => `
+              <tr>
+                <td><strong style="color: var(--primary-color);">${quote.name}</strong></td>
+                <td>${quote.service_label}</td>
+                <td>${quote.origin_city ? getCityLabel(quote.origin_city) : '不限'} → ${quote.dest_city ? getCityLabel(quote.dest_city) : '不限'}</td>
+                <td>¥${quote.base_price}/${quote.price_unit}</td>
+                <td>${quote.transit_days || '-'}</td>
+                <td>${quote.valid_days}天</td>
+                <td><span class="badge badge-${quote.status}">${quote.status === 'active' ? '启用' : '停用'}</span></td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" onclick="editQuote(${quote.id})">编辑</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteQuote(${quote.id})">删除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('quoteList').innerHTML = html;
+    }
+
+    function getCityLabel(cityCode) {
+      const labels = {
+        'GZ': '广州', 'SZ': '深圳', 'KM': '昆明', 'DG': '东莞', 'FO': '佛山', 'YW': '义乌', 'SH': '上海', 'NJ': '宁波',
+        'VTE': '万象', 'LPQ': '琅勃拉邦', 'BKK': '曼谷', 'CM': '清迈',
+        'HCM': '胡志明市', 'HAN': '河内', 'DAN': '岘港'
+      };
+      return labels[cityCode] || cityCode;
+    }
+
+    function showAddModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = '添加报价';
+      document.getElementById('quoteForm').reset();
+      document.getElementById('valid_days').value = '7';
+      document.getElementById('status').value = 'active';
+      document.getElementById('formAlert').innerHTML = '';
+      document.getElementById('quoteModal').classList.add('show');
+    }
+
+    async function editQuote(id) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          const quote = result.data;
+          editingId = id;
+          document.getElementById('modalTitle').textContent = '编辑报价';
+          document.getElementById('name').value = quote.name || '';
+          document.getElementById('service_code').value = quote.service_code || '';
+          document.getElementById('price_unit').value = quote.price_unit || 'CBM';
+          document.getElementById('origin_city').value = quote.origin_city || '';
+          document.getElementById('dest_city').value = quote.dest_city || '';
+          document.getElementById('min_weight').value = quote.min_weight || '';
+          document.getElementById('max_weight').value = quote.max_weight || '';
+          document.getElementById('base_price').value = quote.base_price || '';
+          document.getElementById('customs_fee').value = quote.customs_fee || '';
+          document.getElementById('insurance_rate').value = quote.insurance_rate || '';
+          document.getElementById('transit_days').value = quote.transit_days || '';
+          document.getElementById('valid_days').value = quote.valid_days || '7';
+          document.getElementById('status').value = quote.status || 'active';
+          document.getElementById('remarks').value = quote.remarks || '';
+          document.getElementById('formAlert').innerHTML = '';
+          document.getElementById('quoteModal').classList.add('show');
+        }
+      } catch (error) {
+        alert('加载报价信息失败');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('quoteModal').classList.remove('show');
+    }
+
+    async function submitQuote(event) {
+      event.preventDefault();
+      
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        service_code: document.getElementById('service_code').value,
+        price_unit: document.getElementById('price_unit').value,
+        origin_city: document.getElementById('origin_city').value || '',
+        dest_city: document.getElementById('dest_city').value || '',
+        min_weight: document.getElementById('min_weight').value || null,
+        max_weight: document.getElementById('max_weight').value || null,
+        base_price: document.getElementById('base_price').value,
+        customs_fee: document.getElementById('customs_fee').value || null,
+        insurance_rate: document.getElementById('insurance_rate').value || null,
+        transit_days: document.getElementById('transit_days').value || null,
+        valid_days: document.getElementById('valid_days').value || 7,
+        status: document.getElementById('status').value,
+        remarks: document.getElementById('remarks').value.trim()
+      };
+
+      if (!formData.name || !formData.service_code || !formData.base_price) {
+        showAlert('请填写报价名称、运输方式和基础单价', 'error');
+        return;
+      }
+
+      try {
+        const url = editingId ? `${API_URL}/${editingId}` : API_URL;
+        const method = editingId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert(editingId ? '报价更新成功' : '报价添加成功', 'success');
+          setTimeout(() => {
+            closeModal();
+            loadQuotes();
+          }, 1500);
+        } else {
+          showAlert(result.message || '操作失败', 'error');
+        }
+      } catch (error) {
+        showAlert('网络错误，请稍后重试', 'error');
+      }
+    }
+
+    function showAlert(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    }
+
+    async function deleteQuote(id) {
+      if (!confirm('确定要删除这个报价方案吗？')) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE', credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('删除成功');
+          loadQuotes();
+        } else {
+          alert('删除失败');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    function handleFilter() {
+      loadQuotes();
+    }
+
+    function refreshList() {
+      document.getElementById('serviceFilter').value = '';
+      loadQuotes();
+    }
+
+    async function loadQuoteHistory() {
+      try {
+        const response = await fetch(`${API_BASE}/quotes/history`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          renderQuoteHistory(result.data);
+        } else {
+          document.getElementById('quoteHistory').innerHTML = `
+            <div class="empty-state">
+              <div class="icon">📝</div>
+              <div>暂无报价历史记录</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('quoteHistory').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>加载失败</div></div>`;
+      }
+    }
+
+    function renderQuoteHistory(history) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>报价单号</th>
+              <th>运输方式</th>
+              <th>路线</th>
+              <th>货物信息</th>
+              <th>报价金额</th>
+              <th>预计时效</th>
+              <th>联系人</th>
+              <th>创建时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${history.map(item => `
+              <tr>
+                <td>SQ${item.id}</td>
+                <td>${getTransportLabel(item.transport_type)}</td>
+                <td>${getCityLabel2(item.origin_city)} → ${getCityLabel2(item.dest_city)}</td>
+                <td>${item.cargo_weight}kg${item.cargo_volume ? ` / ${item.cargo_volume}cbm` : ''}</td>
+                <td style="color: var(--primary-color); font-weight: 500;">¥${item.unit_price}</td>
+                <td>${item.estimated_days}天</td>
+                <td>${item.contact_name} (${item.contact_phone})</td>
+                <td>${formatDate(item.created_at)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('quoteHistory').innerHTML = html;
+    }
+
+    function getTransportLabel(type) {
+      const labels = {
+        rail: '🚂 中老铁路',
+        thai: '🚢 泰国海运',
+        viet: '⚓ 越南海运'
+      };
+      return labels[type] || type;
+    }
+
+    function getCityLabel2(city) {
+      const labels = {
+        kunming: '昆明',
+        vientiane: '万象',
+        bangkok: '曼谷',
+        hochi: '胡志明',
+        guangzhou: '广州',
+        shenzhen: '深圳'
+      };
+      return labels[city] || city;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '--';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        loadQuotes();
+        loadQuoteHistory();
+      }
+    });
+  </script>
+</body>
+</html>

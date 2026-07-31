@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 - 重庆恒慈国际贸易有限公司</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .login-header h1 {
+            color: #1e3c72;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #2a5298;
+            box-shadow: 0 0 0 4px rgba(42, 82, 152, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: #dc3545;
+        }
+
+        .form-group input.success {
+            border-color: #28a745;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+        }
+
+        .strength-bar {
+            display: flex;
+            gap: 4px;
+            height: 6px;
+            margin-bottom: 6px;
+        }
+
+        .strength-bar div {
+            flex: 1;
+            border-radius: 3px;
+            background: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .strength-bar div.weak {
+            background: #dc3545;
+        }
+
+        .strength-bar div.medium {
+            background: #ffc107;
+        }
+
+        .strength-bar div.strong {
+            background: #28a745;
+        }
+
+        .strength-text {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .strength-text.weak {
+            color: #dc3545;
+        }
+
+        .strength-text.medium {
+            color: #ffc107;
+        }
+
+        .strength-text.strong {
+            color: #28a745;
+        }
+
+        .password-hints {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        .captcha-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .captcha-group input {
+            flex: 1;
+        }
+
+        .captcha-img {
+            width: 120px;
+            height: 48px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid #e0e0e0;
+        }
+
+        .captcha-img:hover {
+            border-color: #2a5298;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(42, 82, 152, 0.3);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #fff5f5;
+            border: 1px solid #fc8181;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .lockout-message {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .lockout-countdown {
+            font-weight: 600;
+            color: #dc3545;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #2a5298;
+            text-decoration: none;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+
+        .back-link a:hover {
+            opacity: 0.7;
+        }
+
+        .security-info {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .security-info svg {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🚚 后台管理</h1>
+            <p>重庆恒慈国际贸易有限公司管理系统</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div id="lockoutMessage" style="display: none;" class="lockout-message">
+            账户已被锁定，请 <span class="lockout-countdown" id="lockoutCountdown">60</span> 秒后重试
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" placeholder="请输入用户名" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" placeholder="请输入密码" required autocomplete="current-password">
+                <div class="password-strength">
+                    <div class="strength-bar" id="strengthBar">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <div class="strength-text" id="strengthText">请输入密码</div>
+                </div>
+                <div class="password-hints" id="passwordHints">
+                    <span id="hintLength" style="color: #dc3545;">✗</span> 至少8位 <span id="hintLower" style="color: #dc3545;">✗</span> 小写字母 <span id="hintUpper" style="color: #dc3545;">✗</span> 大写字母 <span id="hintNumber" style="color: #dc3545;">✗</span> 数字
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="captcha">验证码</label>
+                <div class="captcha-group">
+                    <input type="text" id="captcha" placeholder="请输入验证码" required maxlength="4">
+                    <img id="captchaImg" class="captcha-img" src="" alt="验证码" onclick="refreshCaptcha()">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 13px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" id="rememberMe">
+                    <span style="color: #666;">记住我</span>
+                </label>
+                <span style="color: #2a5298; cursor: pointer;" onclick="showForgotPassword()">忘记密码?</span>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">登录</button>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">← 返回首页</a>
+        </div>
+
+        <div class="security-info">
+            🔒 安全登录 - 支持密码强度检测和暴力破解防护
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="forgotModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: white; border-radius: 12px; padding: 32px; width: 90%; max-width: 400px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 style="color: #1e3c72;">忘记密码</h3>
+                <span style="font-size: 28px; cursor: pointer;" onclick="closeForgotModal()">×</span>
+            </div>
+            <p style="color: #666; margin-bottom: 20px;">请联系管理员重置密码</p>
+            <button style="width: 100%; padding: 12px; background: #2a5298; color: white; border: none; border-radius: 8px; cursor: pointer;" onclick="closeForgotModal()">确定</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        const MAX_FAILED_ATTEMPTS = 5;
+        const LOCKOUT_DURATION = 60;
+        const STORAGE_KEY_PREFIX = 'sp_login_';
+
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const captchaInput = document.getElementById('captcha');
+        const captchaImg = document.getElementById('captchaImg');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const lockoutMessage = document.getElementById('lockoutMessage');
+        const lockoutCountdown = document.getElementById('lockoutCountdown');
+        
+        const strengthBar = document.getElementById('strengthBar');
+        const strengthText = document.getElementById('strengthText');
+        const hintLength = document.getElementById('hintLength');
+        const hintLower = document.getElementById('hintLower');
+        const hintUpper = document.getElementById('hintUpper');
+        const hintNumber = document.getElementById('hintNumber');
+
+        let countdownInterval = null;
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showLockout(seconds) {
+            lockoutCountdown.textContent = seconds;
+            lockoutMessage.style.display = 'block';
+            loginBtn.disabled = true;
+            loginBtn.textContent = '账户已锁定';
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                seconds--;
+                lockoutCountdown.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(countdownInterval);
+                    resetLoginAttempts();
+                    lockoutMessage.style.display = 'none';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登录';
+                    refreshCaptcha();
+                }
+            }, 1000);
+        }
+
+        function checkLockout() {
+            const username = usernameInput.value.trim();
+            if (!username) return false;
+            
+            const lockoutEnd = localStorage.getItem(STORAGE_KEY_PREFIX + 'lockout_' + username);
+            if (lockoutEnd && parseInt(lockoutEnd) > Date.now()) {
+                const remaining = Math.ceil((parseInt(lockoutEnd) - Date.now()) / 1000);
+                showLockout(remaining);
+                return true;
+            }
+            return false;
+        }
+
+        function getFailedAttempts() {
+            const username = usernameInput.value.trim();
+            const attempts = localStorage.getItem(STORAGE_KEY_PREFIX + 'attempts_' + username);
+            return attempts ? parseInt(attempts) : 0;
+        }
+
+        function incrementFailedAttempts() {
+            const username = usernameInput.value.trim();
+            const attempts = getFailedAttempts() + 1;
+            localStorage.setItem(STORAGE_KEY_PREFIX + 'attempts_' + username, attempts.toString());
+            
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                const lockoutEnd = Date.now() + (LOCKOUT_DURATION * 1000);
+                localStorage.setItem(STORAGE_KEY_PREFIX + 'lockout_' + username, lockoutEnd.toString());
+            }
+            
+            return attempts;
+        }
+
+        function resetLoginAttempts() {
+            const username = usernameInput.value.trim();
+            localStorage.removeItem(STORAGE_KEY_PREFIX + 'attempts_' + username);
+            localStorage.removeItem(STORAGE_KEY_PREFIX + 'lockout_' + username);
+        }
+
+        function validatePasswordStrength(password) {
+            let strength = 0;
+            
+            const hasLength = password.length >= 8;
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+            hintLength.textContent = hasLength ? '✓' : '✗';
+            hintLength.style.color = hasLength ? '#28a745' : '#dc3545';
+            
+            hintLower.textContent = hasLower ? '✓' : '✗';
+            hintLower.style.color = hasLower ? '#28a745' : '#dc3545';
+            
+            hintUpper.textContent = hasUpper ? '✓' : '✗';
+            hintUpper.style.color = hasUpper ? '#28a745' : '#dc3545';
+            
+            hintNumber.textContent = hasNumber ? '✓' : '✗';
+            hintNumber.style.color = hasNumber ? '#28a745' : '#dc3545';
+
+            if (hasLength) strength++;
+            if (hasLower) strength++;
+            if (hasUpper) strength++;
+            if (hasNumber) strength++;
+            if (hasSpecial) strength++;
+
+            const bars = strengthBar.querySelectorAll('div');
+            bars.forEach((bar, index) => {
+                bar.classList.remove('weak', 'medium', 'strong');
+                if (index < strength) {
+                    if (strength <= 2) bar.classList.add('weak');
+                    else if (strength <= 3) bar.classList.add('medium');
+                    else bar.classList.add('strong');
+                }
+            });
+
+            if (strength <= 2) {
+                strengthText.textContent = '弱 - 请使用更复杂的密码';
+                strengthText.className = 'strength-text weak';
+                return { level: 'weak', score: strength };
+            } else if (strength <= 3) {
+                strengthText.textContent = '中等 - 建议添加特殊字符';
+                strengthText.className = 'strength-text medium';
+                return { level: 'medium', score: strength };
+            } else {
+                strengthText.textContent = '强 - 密码安全性良好';
+                strengthText.className = 'strength-text strong';
+                return { level: 'strong', score: strength };
+            }
+        }
+
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefhijkmnprstuvwxyz0123456789';
+            let captcha = '';
+            for (let i = 0; i < 4; i++) {
+                captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return captcha;
+        }
+
+        function drawCaptcha(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 120;
+            canvas.height = 48;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            
+            text.split('').forEach((char, index) => {
+                const x = 20 + index * 25;
+                const y = 32 + (Math.random() - 0.5) * 8;
+                const rotation = (Math.random() - 0.5) * 0.3;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rotation);
+                
+                const colors = ['#1e3c72', '#2a5298', '#dc3545', '#28a745'];
+                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+            });
+
+            for (let i = 0; i < 4; i++) {
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < 20; i++) {
+                ctx.fillStyle = 'rgba(0,0,0,0.05)';
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return canvas.toDataURL();
+        }
+
+        let currentCaptcha = '';
+
+        function refreshCaptcha() {
+            currentCaptcha = generateCaptcha();
+            captchaImg.src = drawCaptcha(currentCaptcha);
+        }
+
+        function validateCaptcha(input) {
+            return input.toLowerCase() === currentCaptcha.toLowerCase();
+        }
+
+        function showForgotPassword() {
+            document.getElementById('forgotModal').style.display = 'flex';
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotModal').style.display = 'none';
+        }
+
+        passwordInput.addEventListener('input', function() {
+            validatePasswordStrength(this.value);
+        });
+
+        usernameInput.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                checkLockout();
+            }
+        });
+
+        usernameInput.addEventListener('input', function() {
+            if (lockoutMessage.style.display === 'block') {
+                lockoutMessage.style.display = 'none';
+                loginBtn.disabled = false;
+                loginBtn.textContent = '登录';
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const captcha = captchaInput.value.trim();
+
+            if (!username) {
+                showError('请输入用户名');
+                usernameInput.classList.add('error');
+                return;
+            }
+            usernameInput.classList.remove('error');
+
+            if (!password) {
+                showError('请输入密码');
+                passwordInput.classList.add('error');
+                return;
+            }
+            passwordInput.classList.remove('error');
+
+            const strength = validatePasswordStrength(password);
+            if (strength.level === 'weak') {
+                showError('密码强度过低，请使用更复杂的密码');
+                return;
+            }
+
+            if (!captcha) {
+                showError('请输入验证码');
+                captchaInput.classList.add('error');
+                return;
+            }
+            captchaInput.classList.remove('error');
+
+            if (!validateCaptcha(captcha)) {
+                showError('验证码错误，请重试');
+                refreshCaptcha();
+                captchaInput.value = '';
+                return;
+            }
+
+            if (checkLockout()) {
+                return;
+            }
+
+            hideError();
+            loginBtn.disabled = true;
+            loginBtn.textContent = '登录中...';
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resetLoginAttempts();
+                    
+                    if (document.getElementById('rememberMe').checked) {
+                        localStorage.setItem(STORAGE_KEY_PREFIX + 'remembered_user', username);
+                    } else {
+                        localStorage.removeItem(STORAGE_KEY_PREFIX + 'remembered_user');
+                    }
+                    
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    const attempts = incrementFailedAttempts();
+                    const remaining = MAX_FAILED_ATTEMPTS - attempts;
+                    
+                    if (attempts >= MAX_FAILED_ATTEMPTS) {
+                        showLockout(LOCKOUT_DURATION);
+                    } else {
+                        showError(`${result.message || '登录失败'}，还剩 ${remaining} 次尝试机会`);
+                    }
+                    
+                    refreshCaptcha();
+                    captchaInput.value = '';
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                showError('网络错误，请稍后重试');
+            } finally {
+                if (lockoutMessage.style.display !== 'block') {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登录';
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshCaptcha();
+            
+            const rememberedUser = localStorage.getItem(STORAGE_KEY_PREFIX + 'remembered_user');
+            if (rememberedUser) {
+                usernameInput.value = rememberedUser;
+                document.getElementById('rememberMe').checked = true;
+            }
+        });
+    </script>
+</body>
+</html>

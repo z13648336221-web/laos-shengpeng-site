@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>订单管理 - 重庆恒慈国际贸易有限公司</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">🚢 恒慈国际贸易管理</div>
+    <nav>
+      <a href="admin-dashboard.html">📊 仪表盘</a>
+      <a href="admin.html">📰 新闻管理</a>
+      <a href="admin-orders.html" class="active">📦 订单管理</a>
+      <a href="admin-customers.html">👥 客户管理</a>
+      <a href="admin-quotes.html">💰 报价管理</a>
+      <a href="admin-inquiry.html">📋 询价管理</a>
+      <a href="admin-chat.html">💬 客服管理</a>
+      <a href="admin-reports.html">📈 数据分析</a>
+      <a href="admin-logs.html">🔒 登录日志</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>📦 订单管理</h1>
+      <div class="user-info">
+        <span class="user-name" id="userName">管理员</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">订单列表</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="exportOrders()">📥 导出CSV</button>
+          <button class="btn btn-primary" onclick="showAddModal()">+ 创建订单</button>
+        </div>
+      </div>
+      
+      <div class="search-bar">
+        <input type="text" id="searchKeyword" placeholder="搜索运单号、联系人..." onkeyup="handleSearch()">
+        <select id="statusFilter" onchange="handleFilter()">
+          <option value="">全部状态</option>
+          <option value="pending">待发运</option>
+          <option value="picked_up">已揽收</option>
+          <option value="in_transit">运输中</option>
+          <option value="departed">已离港</option>
+          <option value="customs">清关中</option>
+          <option value="delivered">已签收</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <button class="btn btn-secondary" onclick="refreshList()">刷新</button>
+      </div>
+
+      <div id="batchActions" style="display: none; margin-bottom: 16px; padding: 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+          <label for="selectAll" style="font-weight: 500;">全选</label>
+          <span style="color: var(--text-secondary); font-size: 14px;">已选择 <span id="selectedCount">0</span> 项</span>
+        </div>
+        <select id="batchStatus" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+          <option value="">批量更新状态</option>
+          <option value="pending">待发运</option>
+          <option value="picked_up">已揽收</option>
+          <option value="in_transit">运输中</option>
+          <option value="departed">已离港</option>
+          <option value="customs">清关中</option>
+          <option value="delivered">已签收</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="batchUpdateStatus()">应用状态</button>
+        <button class="btn btn-danger btn-sm" onclick="batchDelete()">批量删除</button>
+      </div>
+
+      <div id="orderList">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">创建订单</div>
+        <span class="modal-close" onclick="closeModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <form id="orderForm" onsubmit="submitOrder(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>运输方式 *</label>
+              <select id="service_code" required>
+                <option value="">请选择</option>
+                <option value="railway">🚂 中老铁路陆运</option>
+                <option value="thailand-sea">🚢 泰国海运</option>
+                <option value="vietnam-sea">⚓ 越南海运</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>装载方式</label>
+              <select id="load_type">
+                <option value="lcl">拼箱（LCL）</option>
+                <option value="fcl20">整柜 20GP</option>
+                <option value="fcl40">整柜 40GP</option>
+                <option value="fcl40hq">整柜 40HQ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>起运城市 *</label>
+              <select id="origin_city" required>
+                <option value="">请选择</option>
+                <option value="GZ">广州</option>
+                <option value="SZ">深圳</option>
+                <option value="KM">昆明</option>
+                <option value="DG">东莞</option>
+                <option value="FO">佛山</option>
+                <option value="YW">义乌</option>
+                <option value="SH">上海</option>
+                <option value="NJ">宁波</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>目的城市 *</label>
+              <select id="dest_city" required>
+                <option value="">请选择</option>
+                <option value="VTE">老挝·万象</option>
+                <option value="LPQ">老挝·琅勃拉邦</option>
+                <option value="BKK">泰国·曼谷</option>
+                <option value="CM">泰国·清迈</option>
+                <option value="HCM">越南·胡志明市</option>
+                <option value="HAN">越南·河内</option>
+                <option value="DAN">越南·岘港</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>货物品名 *</label>
+              <input type="text" id="cargo_name" required placeholder="例如：电子产品、纺织品">
+            </div>
+            <div class="form-group">
+              <label>货物类型</label>
+              <select id="cargo_type">
+                <option value="general">普通货物</option>
+                <option value="electronic">电子产品</option>
+                <option value="food">食品/农产品</option>
+                <option value="textile">纺织品/服装</option>
+                <option value="furniture">家具家居</option>
+                <option value="machinery">机械设备</option>
+                <option value="chemical">化工品</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>重量 (KG) *</label>
+              <input type="number" id="weight" required min="1" placeholder="输入货物重量">
+            </div>
+            <div class="form-group">
+              <label>体积 (CBM)</label>
+              <input type="number" id="volume" min="0" step="0.01" placeholder="输入货物体积">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>预计到达日期</label>
+            <input type="date" id="estimated_delivery">
+          </div>
+
+          <div class="form-group form-full">
+            <label>发货人信息</label>
+            <div class="form-row">
+              <div class="form-group">
+                <input type="text" id="sender_name" placeholder="发货人姓名">
+              </div>
+              <div class="form-group">
+                <input type="tel" id="sender_phone" placeholder="联系电话">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group form-full">
+            <label>收货人信息</label>
+            <div class="form-row">
+              <div class="form-group">
+                <input type="text" id="receiver_name" placeholder="收货人姓名">
+              </div>
+              <div class="form-group">
+                <input type="tel" id="receiver_phone" placeholder="联系电话">
+              </div>
+            </div>
+            <textarea id="receiver_address" placeholder="收货地址"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>联系人姓名 *</label>
+              <input type="text" id="contact_name" required placeholder="负责联系人">
+            </div>
+            <div class="form-group">
+              <label>联系电话 *</label>
+              <input type="tel" id="contact_phone" required placeholder="手机号码">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>备注说明</label>
+            <textarea id="remarks" placeholder="其他说明信息"></textarea>
+          </div>
+
+          <div id="formAlert"></div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-success">保存订单</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal" style="max-width: 900px;">
+      <div class="modal-header">
+        <div class="modal-title">订单详情</div>
+        <span class="modal-close" onclick="closeDetailModal()">×</span>
+      </div>
+      <div class="modal-body" id="detailContent">
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="statusModal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title">更新订单状态</div>
+        <span class="modal-close" onclick="closeStatusModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <form id="statusForm" onsubmit="submitStatusUpdate(event)">
+          <div class="form-group">
+            <label>新状态 *</label>
+            <select id="newStatus" required>
+              <option value="">请选择</option>
+              <option value="pending">待发运</option>
+              <option value="picked_up">已揽收</option>
+              <option value="in_transit">运输中</option>
+              <option value="departed">已离港</option>
+              <option value="customs">清关中</option>
+              <option value="delivered">已签收</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>当前位置</label>
+            <input type="text" id="statusLocation" placeholder="例如：广州仓库、曼谷港口等">
+          </div>
+          <div class="form-group">
+            <label>备注说明</label>
+            <textarea id="statusRemark" placeholder="状态更新的备注信息"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeStatusModal()">取消</button>
+            <button type="submit" class="btn btn-success">确认更新</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    const API_URL = '/api/orders';
+    let editingId = null;
+    let statusUpdateOrderId = null;
+    let orderDataCache = [];
+
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (!result.success) {
+          window.location.href = 'admin-login.html';
+          return false;
+        }
+        
+        document.getElementById('userName').textContent = result.data.username;
+        return true;
+      } catch (error) {
+        window.location.href = 'admin-login.html';
+        return false;
+      }
+    }
+    
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (error) {}
+      window.location.href = 'admin-login.html';
+    }
+
+    async function loadOrders() {
+      try {
+        const status = document.getElementById('statusFilter').value;
+        const keyword = document.getElementById('searchKeyword').value.trim();
+        
+        const url = new URL(API_URL);
+        if (status) url.searchParams.set('status', status);
+        if (keyword) url.searchParams.set('keyword', keyword);
+        
+        const response = await fetch(url, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          orderDataCache = result.data;
+          renderOrderList(result.data);
+        } else {
+          orderDataCache = [];
+          document.getElementById('orderList').innerHTML = `
+            <div class="empty-state">
+              <div class="icon">📭</div>
+              <div>暂无订单数据</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('orderList').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>加载失败，请稍后重试</div></div>`;
+      }
+    }
+    
+    function exportOrders() {
+      if (orderDataCache.length === 0) {
+        alert('没有可导出的订单数据');
+        return;
+      }
+
+      const headers = ['运单号', '货物名称', '重量(kg)', '体积(cbm)', '起运地', '目的地', '状态', '联系人', '联系电话', '创建日期'];
+      const csvContent = [
+        headers.join(','),
+        ...orderDataCache.map(order => [
+          order.tracking_number,
+          `"${(order.cargo_name || '').replace(/"/g, '""')}"`,
+          order.weight,
+          order.volume || 0,
+          getCityLabel(order.origin_city),
+          getCityLabel(order.dest_city),
+          getStatusLabel(order.status),
+          `"${(order.contact_name || '').replace(/"/g, '""')}"`,
+          order.contact_phone,
+          formatDate(order.created_at)
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `订单导出_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+
+    function renderOrderList(orders) {
+      if (orders.length === 0) {
+        document.getElementById('orderList').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <div>暂无订单数据</div>
+          </div>
+        `;
+        document.getElementById('batchActions').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('batchActions').style.display = 'flex';
+      document.getElementById('selectAll').checked = false;
+      document.getElementById('selectedCount').textContent = '0';
+      selectedOrders = [];
+
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="headerCheckbox" onchange="toggleSelectAll()"></th>
+              <th>运单号</th>
+              <th>货物信息</th>
+              <th>路线</th>
+              <th>状态</th>
+              <th>预计到达</th>
+              <th>联系人</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map(order => `
+              <tr>
+                <td><input type="checkbox" class="order-checkbox" data-id="${order.id}" onchange="toggleSelect(${order.id})"></td>
+                <td><strong style="color: var(--primary-color);">${order.tracking_number}</strong></td>
+                <td style="max-width: 150px;">${order.cargo_name || '-'}<br/>${order.weight} KG</td>
+                <td>${getCityLabel(order.origin_city)} → ${getCityLabel(order.dest_city)}</td>
+                <td><span class="badge badge-${order.status}">${getStatusLabel(order.status)}</span></td>
+                <td>${order.estimated_delivery ? formatDate(order.estimated_delivery) : '-'}</td>
+                <td>${order.contact_name || '-'}<br/>${order.contact_phone || '-'}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" onclick="viewOrder(${order.id})">详情</button>
+                  <button class="btn btn-primary btn-sm" onclick="updateOrderStatus(${order.id})">更新状态</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteOrder(${order.id})">删除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('orderList').innerHTML = html;
+    }
+
+    let selectedOrders = [];
+
+    function toggleSelect(orderId) {
+      const index = selectedOrders.indexOf(orderId);
+      if (index > -1) {
+        selectedOrders.splice(index, 1);
+      } else {
+        selectedOrders.push(orderId);
+      }
+      document.getElementById('selectedCount').textContent = selectedOrders.length;
+      document.getElementById('selectAll').checked = selectedOrders.length === document.querySelectorAll('.order-checkbox').length;
+    }
+
+    function toggleSelectAll() {
+      const checkboxes = document.querySelectorAll('.order-checkbox');
+      const isChecked = document.getElementById('selectAll').checked;
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+      });
+      
+      if (isChecked) {
+        selectedOrders = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+      } else {
+        selectedOrders = [];
+      }
+      document.getElementById('selectedCount').textContent = selectedOrders.length;
+    }
+
+    async function batchUpdateStatus() {
+      const status = document.getElementById('batchStatus').value;
+      
+      if (selectedOrders.length === 0) {
+        alert('请先选择订单');
+        return;
+      }
+      
+      if (!status) {
+        alert('请选择要更新的状态');
+        return;
+      }
+      
+      if (!confirm(`确定要将选中的 ${selectedOrders.length} 个订单更新为"${getStatusLabel(status)}"状态吗？`)) {
+        return;
+      }
+      
+      try {
+        const promises = selectedOrders.map(id => 
+          fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+            credentials: 'include'
+          })
+        );
+        
+        await Promise.all(promises);
+        alert('批量更新成功');
+        loadOrders();
+      } catch (error) {
+        alert('批量更新失败');
+      }
+    }
+
+    async function batchDelete() {
+      if (selectedOrders.length === 0) {
+        alert('请先选择订单');
+        return;
+      }
+      
+      const confirmed = window.confirm(`确定要删除选中的 ${selectedOrders.length} 个订单吗？此操作不可撤销。`);
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        const promises = selectedOrders.map(id => 
+          fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          })
+        );
+        
+        await Promise.all(promises);
+        alert('批量删除成功');
+        loadOrders();
+      } catch (error) {
+        alert('批量删除失败');
+      }
+    }
+
+    function getCityLabel(cityCode) {
+      const labels = {
+        'GZ': '广州', 'SZ': '深圳', 'KM': '昆明', 'DG': '东莞', 'FO': '佛山', 'YW': '义乌', 'SH': '上海', 'NJ': '宁波',
+        'VTE': '万象', 'LPQ': '琅勃拉邦', 'BKK': '曼谷', 'CM': '清迈',
+        'HCM': '胡志明市', 'HAN': '河内', 'DAN': '岘港'
+      };
+      return labels[cityCode] || cityCode;
+    }
+
+    function getStatusLabel(status) {
+      const labels = {
+        pending: '待发运',
+        picked_up: '已揽收',
+        in_transit: '运输中',
+        departed: '已离港',
+        customs: '清关中',
+        delivered: '已签收',
+        cancelled: '已取消'
+      };
+      return labels[status] || status;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function showAddModal() {
+      editingId = null;
+      document.getElementById('modalTitle').textContent = '创建订单';
+      document.getElementById('orderForm').reset();
+      document.getElementById('formAlert').innerHTML = '';
+      document.getElementById('orderModal').classList.add('show');
+    }
+
+    async function viewOrder(id) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          const order = result.data;
+          document.getElementById('detailContent').innerHTML = `
+            <div style="margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <h3 style="color: var(--primary-color); font-size: 18px;">运单号: ${order.tracking_number}</h3>
+                  <span class="badge badge-${order.status}" style="margin-top: 8px; display: inline-block;">${getStatusLabel(order.status)}</span>
+                </div>
+                <div style="text-align: right;">
+                  <div style="color: var(--text-secondary); font-size: 12px;">创建时间</div>
+                  <div>${formatDate(order.created_at)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 12px;">📦 货物信息</div>
+                <div>品名: ${order.cargo_name || '-'}</div>
+                <div>类型: ${getCargoTypeLabel(order.cargo_type)}</div>
+                <div>重量: ${order.weight} KG</div>
+                <div>体积: ${order.volume || 0} CBM</div>
+                <div>装载: ${getLoadTypeLabel(order.load_type)}</div>
+              </div>
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 12px;">🚚 运输路线</div>
+                <div>运输方式: ${order.service_label}</div>
+                <div>起运地: ${order.origin_label}</div>
+                <div>目的地: ${order.dest_label}</div>
+                <div>预计到达: ${formatDate(order.estimated_delivery)}</div>
+                <div>实际到达: ${order.actual_delivery ? formatDate(order.actual_delivery) : '-'}</div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 12px;">📤 发货人</div>
+                <div>姓名: ${order.sender_name || '-'}</div>
+                <div>电话: ${order.sender_phone || '-'}</div>
+              </div>
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 12px;">📥 收货人</div>
+                <div>姓名: ${order.receiver_name || '-'}</div>
+                <div>电话: ${order.receiver_phone || '-'}</div>
+                <div style="margin-top: 8px;">地址: ${order.receiver_address || '-'}</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <div style="font-weight: 600; margin-bottom: 12px;">📝 物流轨迹</div>
+              <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; padding: 12px;">
+                ${order.timeline && order.timeline.length > 0 ? order.timeline.map((item, idx) => `
+                  <div style="padding: 8px 0; border-bottom: 1px solid #eee; ${idx === 0 ? 'font-weight: 600;' : ''}">
+                    <div style="color: var(--text-secondary); font-size: 12px;">${formatDateTime(item.time)}</div>
+                    <div>${item.status_label || item.description}</div>
+                    ${item.location ? `<div style="color: var(--text-secondary); font-size: 12px;">📍 ${item.location}</div>` : ''}
+                  </div>
+                `).join('') : '<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无轨迹信息</div>'}
+              </div>
+            </div>
+
+            ${order.remarks ? `<div style="background: #fff3cd; padding: 12px; border-radius: 6px;">
+              <div style="font-weight: 600; color: #856404; margin-bottom: 4px;">备注</div>
+              <div>${order.remarks}</div>
+            </div>` : ''}
+          `;
+          document.getElementById('detailModal').classList.add('show');
+        }
+      } catch (error) {
+        alert('加载订单详情失败');
+      }
+    }
+
+    function getCargoTypeLabel(type) {
+      const labels = {
+        general: '普通货物',
+        electronic: '电子产品',
+        food: '食品/农产品',
+        textile: '纺织品/服装',
+        furniture: '家具家居',
+        machinery: '机械设备',
+        chemical: '化工品',
+        other: '其他'
+      };
+      return labels[type] || type;
+    }
+
+    function getLoadTypeLabel(type) {
+      const labels = {
+        lcl: '拼箱（LCL）',
+        fcl20: '整柜 20GP',
+        fcl40: '整柜 40GP',
+        fcl40hq: '整柜 40HQ'
+      };
+      return labels[type] || type;
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function updateOrderStatus(id) {
+      statusUpdateOrderId = id;
+      document.getElementById('newStatus').value = '';
+      document.getElementById('statusLocation').value = '';
+      document.getElementById('statusRemark').value = '';
+      document.getElementById('statusModal').classList.add('show');
+    }
+    
+    async function submitStatusUpdate(event) {
+      event.preventDefault();
+      
+      const newStatus = document.getElementById('newStatus').value;
+      const location = document.getElementById('statusLocation').value.trim();
+      const remark = document.getElementById('statusRemark').value.trim();
+      
+      if (!newStatus) {
+        alert('请选择新状态');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/${statusUpdateOrderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus, location, remark }),
+          credentials: 'include'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('状态更新成功');
+          closeStatusModal();
+          loadOrders();
+        } else {
+          alert('更新失败');
+        }
+      } catch (error) {
+        alert('更新失败');
+      }
+    }
+    
+    function closeStatusModal() {
+      document.getElementById('statusModal').classList.remove('show');
+    }
+
+    async function deleteOrder(id) {
+      const confirmed = window.confirm('确定要删除这条订单吗？此操作不可撤销。');
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE', credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('删除成功');
+          loadOrders();
+        } else {
+          alert('删除失败');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('orderModal').classList.remove('show');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+
+    async function submitOrder(event) {
+      event.preventDefault();
+      
+      const formData = {
+        service_code: document.getElementById('service_code').value,
+        cargo_name: document.getElementById('cargo_name').value.trim(),
+        cargo_type: document.getElementById('cargo_type').value,
+        weight: parseFloat(document.getElementById('weight').value),
+        volume: parseFloat(document.getElementById('volume').value) || 0,
+        load_type: document.getElementById('load_type').value,
+        origin_city: document.getElementById('origin_city').value,
+        dest_city: document.getElementById('dest_city').value,
+        sender_name: document.getElementById('sender_name').value.trim(),
+        sender_phone: document.getElementById('sender_phone').value.trim(),
+        receiver_name: document.getElementById('receiver_name').value.trim(),
+        receiver_phone: document.getElementById('receiver_phone').value.trim(),
+        receiver_address: document.getElementById('receiver_address').value.trim(),
+        contact_name: document.getElementById('contact_name').value.trim(),
+        contact_phone: document.getElementById('contact_phone').value.trim(),
+        estimated_delivery: document.getElementById('estimated_delivery').value,
+        remarks: document.getElementById('remarks').value.trim()
+      };
+
+      if (!formData.service_code || !formData.cargo_name || !formData.weight || !formData.origin_city || !formData.dest_city || !formData.contact_name || !formData.contact_phone) {
+        showAlert('请填写所有必填字段', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert(`订单创建成功！运单号：${result.tracking_number}`, 'success');
+          setTimeout(() => {
+            closeModal();
+            loadOrders();
+          }, 2000);
+        } else {
+          showAlert(result.message || '创建失败', 'error');
+        }
+      } catch (error) {
+        showAlert('网络错误，请稍后重试', 'error');
+      }
+    }
+
+    function showAlert(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    }
+
+    function handleSearch() {
+      loadOrders();
+    }
+
+    function handleFilter() {
+      loadOrders();
+    }
+
+    function refreshList() {
+      document.getElementById('searchKeyword').value = '';
+      document.getElementById('statusFilter').value = '';
+      loadOrders();
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        loadOrders();
+      }
+    });
+  </script>
+</body>
+</html>

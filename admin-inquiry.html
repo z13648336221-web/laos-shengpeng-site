@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>询价管理 - 重庆恒慈国际贸易有限公司</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">🚢 恒慈国际贸易管理</div>
+    <nav>
+      <a href="admin-dashboard.html">📊 仪表盘</a>
+      <a href="admin.html">📰 新闻管理</a>
+      <a href="admin-orders.html">📦 订单管理</a>
+      <a href="admin-customers.html">👥 客户管理</a>
+      <a href="admin-quotes.html">💰 报价管理</a>
+      <a href="admin-inquiry.html" class="active">📋 询价管理</a>
+      <a href="admin-chat.html">💬 客服管理</a>
+      <a href="admin-reports.html">📈 数据分析</a>
+      <a href="admin-logs.html">🔒 登录日志</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>📋 询价管理</h1>
+      <div class="user-info">
+        <span class="user-name" id="userName">管理员</span>
+        <button class="btn btn-secondary btn-sm" onclick="showChangePwdModal()">修改密码</button>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">询价列表</div>
+        <div class="search-bar">
+          <input type="text" id="searchKeyword" placeholder="搜索联系人/电话...">
+          <select id="statusFilter">
+            <option value="">全部状态</option>
+            <option value="pending">待处理</option>
+            <option value="processing">处理中</option>
+            <option value="completed">已报价</option>
+            <option value="cancelled">已关闭</option>
+          </select>
+          <button class="btn btn-secondary" onclick="loadInquiries()">搜索</button>
+        </div>
+      </div>
+      <div id="inquiryList">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="detailTitle">询价详情</div>
+        <span class="modal-close" onclick="closeDetailModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <div id="detailContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
+        <button class="btn btn-primary" onclick="generateQuote()">生成报价单</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="statusModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">更新状态</div>
+        <span class="modal-close" onclick="closeStatusModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>选择状态</label>
+          <select id="newStatus">
+            <option value="pending">待处理</option>
+            <option value="processing">处理中</option>
+            <option value="completed">已报价</option>
+            <option value="cancelled">已关闭</option>
+          </select>
+        </div>
+        <div id="statusAlert"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeStatusModal()">取消</button>
+        <button class="btn btn-primary" onclick="updateStatus()">确认更新</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="quoteModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">生成报价单</div>
+        <span class="modal-close" onclick="closeQuoteModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <div id="quoteAlert"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>报价金额 (CNY)</label>
+            <input type="number" id="quoteAmount" required placeholder="请输入报价金额">
+          </div>
+          <div class="form-group">
+            <label>预计时效 (天)</label>
+            <input type="number" id="quoteDays" required placeholder="预计运输天数">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>报价说明</label>
+          <textarea id="quoteRemark" placeholder="报价说明、备注信息等"></textarea>
+        </div>
+        <div id="quotePreview" style="display: none;">
+          <div style="border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-top: 16px;">
+            <h4 style="margin-bottom: 12px; color: var(--primary-color);">📋 报价单预览</h4>
+            <div id="quotePreviewContent"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeQuoteModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveQuote()">保存报价</button>
+        <button class="btn btn-success" onclick="printQuote()">打印报价单</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="printArea" style="display: none;">
+    <style>
+      @media print {
+        body * { visibility: hidden; }
+        #printArea, #printArea * { visibility: visible; }
+        #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+      }
+      .quote-header { text-align: center; margin-bottom: 24px; }
+      .quote-title { font-size: 24px; font-weight: bold; color: #2a5298; }
+      .quote-subtitle { font-size: 14px; color: #666; margin-top: 8px; }
+      .quote-info { margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
+      .quote-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+      .quote-label { color: #666; }
+      .quote-value { font-weight: 500; }
+      .quote-total { font-size: 18px; font-weight: bold; color: #2a5298; text-align: right; margin-top: 16px; }
+    </style>
+    <div id="printContent"></div>
+  </div>
+
+  <div class="modal-overlay" id="changePwdModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">修改密码</div>
+        <span class="modal-close" onclick="closeChangePwdModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <div id="pwdAlert"></div>
+        <form id="changePwdForm" onsubmit="changePassword(event)">
+          <div class="form-group">
+            <label>旧密码</label>
+            <input type="password" id="oldPassword" required placeholder="请输入旧密码">
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input type="password" id="newPassword" required placeholder="至少6位字符">
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPassword" required placeholder="再次输入新密码">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeChangePwdModal()">取消</button>
+            <button type="submit" class="btn btn-primary">确认修改</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    let currentInquiryId = null;
+
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+        const result = await response.json();
+        if (!result.success) {
+          window.location.href = 'admin-login.html';
+          return false;
+        }
+        document.getElementById('userName').textContent = result.data.username;
+        return true;
+      } catch (error) {
+        window.location.href = 'admin-login.html';
+        return false;
+      }
+    }
+
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (error) {}
+      window.location.href = 'admin-login.html';
+    }
+
+    async function loadInquiries() {
+      const keyword = document.getElementById('searchKeyword').value.trim();
+      const status = document.getElementById('statusFilter').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/inquiry?status=${status}`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          let data = result.data;
+          
+          if (keyword) {
+            data = data.filter(item => 
+              (item.contact_name && item.contact_name.includes(keyword)) ||
+              (item.contact_phone && item.contact_phone.includes(keyword)) ||
+              (item.cargo_name && item.cargo_name.includes(keyword))
+            );
+          }
+          
+          if (data.length > 0) {
+            renderInquiryList(data);
+          } else {
+            document.getElementById('inquiryList').innerHTML = `
+              <div class="empty-state">
+                <div class="icon">📭</div>
+                <div>暂无询价记录</div>
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        document.getElementById('inquiryList').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>加载失败</div></div>`;
+      }
+    }
+
+    function renderInquiryList(list) {
+      const html = `
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>联系人</th>
+              <th>联系电话</th>
+              <th>货物信息</th>
+              <th>运输类型</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(item => `
+              <tr>
+                <td>#${item.id}</td>
+                <td>${item.contact_name}</td>
+                <td>${item.contact_phone}</td>
+                <td>${item.cargo_name} (${item.weight}kg)</td>
+                <td>${getTransportLabel(item.transport_type)}</td>
+                <td><span class="badge badge-${item.status}">${getStatusLabel(item.status)}</span></td>
+                <td>${formatDate(item.created_at)}</td>
+                <td>
+                  <button class="btn btn-secondary btn-sm" onclick="viewDetail(${item.id})">详情</button>
+                  <button class="btn btn-primary btn-sm" onclick="openStatusModal(${item.id}, '${item.status}')">状态</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${item.id})">删除</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('inquiryList').innerHTML = html;
+    }
+
+    function getTransportLabel(type) {
+      const labels = {
+        rail: '🚂 中老铁路',
+        thai: '🚢 泰国海运',
+        viet: '⚓ 越南海运'
+      };
+      return labels[type] || type;
+    }
+
+    function getStatusLabel(status) {
+      const labels = {
+        pending: '待处理',
+        processing: '处理中',
+        completed: '已报价',
+        cancelled: '已关闭'
+      };
+      return labels[status] || status;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '--';
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    async function viewDetail(id) {
+      try {
+        const response = await fetch(`${API_BASE}/inquiry/${id}`, { credentials: 'include' });
+        const result = await response.json();
+        
+        if (result.success) {
+          const inquiry = result.data;
+          document.getElementById('detailTitle').textContent = `询价详情 #${inquiry.id}`;
+          document.getElementById('detailContent').innerHTML = `
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+              <div style="font-weight: 600; margin-bottom: 12px;">📋 基本信息</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div><span style="color: var(--text-secondary);">运输类型:</span> ${getTransportLabel(inquiry.transport_type)}</div>
+                <div><span style="color: var(--text-secondary);">状态:</span> <span class="badge badge-${inquiry.status}">${getStatusLabel(inquiry.status)}</span></div>
+                <div><span style="color: var(--text-secondary);">创建时间:</span> ${formatDate(inquiry.created_at)}</div>
+              </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+              <div style="font-weight: 600; margin-bottom: 12px;">📍 运输信息</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div><span style="color: var(--text-secondary);">起运地:</span> ${getCityLabel(inquiry.origin_city)}</div>
+                <div><span style="color: var(--text-secondary);">目的地:</span> ${getCityLabel(inquiry.dest_city)}</div>
+              </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+              <div style="font-weight: 600; margin-bottom: 12px;">📦 货物信息</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div><span style="color: var(--text-secondary);">货物名称:</span> ${inquiry.cargo_name}</div>
+                <div><span style="color: var(--text-secondary);">重量:</span> ${inquiry.weight} kg</div>
+                <div><span style="color: var(--text-secondary);">体积:</span> ${inquiry.volume || 0} cbm</div>
+                <div><span style="color: var(--text-secondary);">需要报关:</span> ${inquiry.need_customs === 'yes' ? '是' : '否'}</div>
+                <div><span style="color: var(--text-secondary);">需要保险:</span> ${inquiry.need_insurance === 'yes' ? '是' : '否'}</div>
+              </div>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+              <div style="font-weight: 600; margin-bottom: 12px;">👤 联系人信息</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div><span style="color: var(--text-secondary);">姓名:</span> ${inquiry.contact_name}</div>
+                <div><span style="color: var(--text-secondary);">电话:</span> ${inquiry.contact_phone}</div>
+                <div><span style="color: var(--text-secondary);">邮箱:</span> ${inquiry.contact_email || '-'}</div>
+                <div><span style="color: var(--text-secondary);">公司:</span> ${inquiry.company_name || '-'}</div>
+              </div>
+            </div>
+            
+            ${inquiry.remark ? `
+            <div style="background: #fff3cd; padding: 12px; border-radius: 8px;">
+              <div style="font-weight: 600; color: #856404; margin-bottom: 4px;">备注</div>
+              <div>${inquiry.remark}</div>
+            </div>
+            ` : ''}
+          `;
+          document.getElementById('detailModal').classList.add('show');
+        }
+      } catch (error) {
+        alert('加载详情失败');
+      }
+    }
+
+    function getCityLabel(city) {
+      const labels = {
+        kunming: '昆明',
+        vientiane: '万象',
+        bangkok: '曼谷',
+        hochi: '胡志明',
+        guangzhou: '广州',
+        shenzhen: '深圳'
+      };
+      return labels[city] || city;
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+
+    function openStatusModal(id, currentStatus) {
+      currentInquiryId = id;
+      document.getElementById('newStatus').value = currentStatus;
+      document.getElementById('statusAlert').innerHTML = '';
+      document.getElementById('statusModal').classList.add('show');
+    }
+
+    function closeStatusModal() {
+      document.getElementById('statusModal').classList.remove('show');
+      currentInquiryId = null;
+    }
+
+    async function updateStatus() {
+      const status = document.getElementById('newStatus').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/inquiry/${currentInquiryId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ status })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('statusAlert').innerHTML = '<div class="alert alert-success">状态更新成功</div>';
+          setTimeout(() => {
+            closeStatusModal();
+            loadInquiries();
+          }, 1000);
+        } else {
+          document.getElementById('statusAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+        }
+      } catch (error) {
+        document.getElementById('statusAlert').innerHTML = '<div class="alert alert-error">更新失败</div>';
+      }
+    }
+
+    async function deleteInquiry(id) {
+      if (!confirm('确定要删除这条询价记录吗？')) return;
+      
+      try {
+        const response = await fetch(`${API_BASE}/inquiry/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('删除成功');
+          loadInquiries();
+        } else {
+          alert(result.message || '删除失败');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    let currentQuoteInquiry = null;
+
+    function generateQuote() {
+      const inquiryId = document.getElementById('detailTitle').textContent.replace('询价详情 #', '');
+      
+      try {
+        fetch(`${API_BASE}/inquiry/${inquiryId}`, { credentials: 'include' })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              currentQuoteInquiry = result.data;
+              document.getElementById('quoteAlert').innerHTML = '';
+              document.getElementById('quoteAmount').value = '';
+              document.getElementById('quoteDays').value = '';
+              document.getElementById('quoteRemark').value = '';
+              document.getElementById('quoteModal').classList.add('show');
+            }
+          });
+      } catch (error) {
+        alert('加载询价信息失败');
+      }
+    }
+
+    function closeQuoteModal() {
+      document.getElementById('quoteModal').classList.remove('show');
+      currentQuoteInquiry = null;
+    }
+
+    function updateQuotePreview() {
+      if (!currentQuoteInquiry) return;
+      
+      const amount = document.getElementById('quoteAmount').value;
+      const days = document.getElementById('quoteDays').value;
+      const remark = document.getElementById('quoteRemark').value;
+      
+      if (amount && days) {
+        const previewHtml = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div><span style="color: var(--text-secondary);">运输类型:</span> ${getTransportLabel(currentQuoteInquiry.transport_type)}</div>
+            <div><span style="color: var(--text-secondary);">路线:</span> ${getCityLabel(currentQuoteInquiry.origin_city)} → ${getCityLabel(currentQuoteInquiry.dest_city)}</div>
+            <div><span style="color: var(--text-secondary);">货物:</span> ${currentQuoteInquiry.cargo_name} (${currentQuoteInquiry.weight}kg)</div>
+            <div><span style="color: var(--text-secondary);">预计时效:</span> ${days} 天</div>
+            <div><span style="color: var(--text-secondary);">报价金额:</span> <span style="color: var(--primary-color); font-weight: 600;">¥ ${amount}</span></div>
+          </div>
+          ${remark ? `<div style="margin-top: 8px; color: var(--text-secondary);">备注: ${remark}</div>` : ''}
+        `;
+        document.getElementById('quotePreviewContent').innerHTML = previewHtml;
+        document.getElementById('quotePreview').style.display = 'block';
+      } else {
+        document.getElementById('quotePreview').style.display = 'none';
+      }
+    }
+
+    document.getElementById('quoteAmount').addEventListener('input', updateQuotePreview);
+    document.getElementById('quoteDays').addEventListener('input', updateQuotePreview);
+    document.getElementById('quoteRemark').addEventListener('input', updateQuotePreview);
+
+    async function saveQuote() {
+      const amount = document.getElementById('quoteAmount').value;
+      const days = document.getElementById('quoteDays').value;
+      const remark = document.getElementById('quoteRemark').value;
+      
+      if (!amount || !days) {
+        document.getElementById('quoteAlert').innerHTML = '<div class="alert alert-error">请填写报价金额和预计时效</div>';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/quotes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            inquiry_id: currentQuoteInquiry.id,
+            transport_type: currentQuoteInquiry.transport_type,
+            origin_city: currentQuoteInquiry.origin_city,
+            dest_city: currentQuoteInquiry.dest_city,
+            cargo_weight: currentQuoteInquiry.weight,
+            cargo_volume: currentQuoteInquiry.volume || 0,
+            unit_price: parseFloat(amount),
+            estimated_days: parseInt(days),
+            remark: remark,
+            contact_name: currentQuoteInquiry.contact_name,
+            contact_phone: currentQuoteInquiry.contact_phone,
+            contact_email: currentQuoteInquiry.contact_email
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('quoteAlert').innerHTML = '<div class="alert alert-success">报价单保存成功！</div>';
+          
+          await fetch(`${API_BASE}/inquiry/${currentQuoteInquiry.id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: 'completed' })
+          });
+          
+          setTimeout(() => {
+            closeQuoteModal();
+            closeDetailModal();
+            loadInquiries();
+          }, 1500);
+        } else {
+          document.getElementById('quoteAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+        }
+      } catch (error) {
+        document.getElementById('quoteAlert').innerHTML = '<div class="alert alert-error">保存失败</div>';
+      }
+    }
+
+    function printQuote() {
+      if (!currentQuoteInquiry) return;
+      
+      const amount = document.getElementById('quoteAmount').value;
+      const days = document.getElementById('quoteDays').value;
+      const remark = document.getElementById('quoteRemark').value;
+      
+      if (!amount || !days) {
+        alert('请先填写报价金额和预计时效');
+        return;
+      }
+      
+      const printHtml = `
+        <div class="quote-header">
+          <div class="quote-title">🚢 重庆恒慈国际贸易有限公司 - 报价单</div>
+          <div class="quote-subtitle">CHONGQING HENGCI INTERNATIONAL TRADE CO., LTD. QUOTATION</div>
+        </div>
+        
+        <div class="quote-info">
+          <div class="quote-row"><span class="quote-label">报价单号</span><span class="quote-value">SQ${Date.now()}</span></div>
+          <div class="quote-row"><span class="quote-label">日期</span><span class="quote-value">${formatDate(new Date())}</span></div>
+        </div>
+        
+        <div class="quote-info">
+          <div class="quote-row"><span class="quote-label">运输类型</span><span class="quote-value">${getTransportLabel(currentQuoteInquiry.transport_type)}</span></div>
+          <div class="quote-row"><span class="quote-label">起运地</span><span class="quote-value">${getCityLabel(currentQuoteInquiry.origin_city)}</span></div>
+          <div class="quote-row"><span class="quote-label">目的地</span><span class="quote-value">${getCityLabel(currentQuoteInquiry.dest_city)}</span></div>
+        </div>
+        
+        <div class="quote-info">
+          <div class="quote-row"><span class="quote-label">货物名称</span><span class="quote-value">${currentQuoteInquiry.cargo_name}</span></div>
+          <div class="quote-row"><span class="quote-label">重量</span><span class="quote-value">${currentQuoteInquiry.weight} kg</span></div>
+          <div class="quote-row"><span class="quote-label">体积</span><span class="quote-value">${currentQuoteInquiry.volume || 0} cbm</span></div>
+          <div class="quote-row"><span class="quote-label">预计时效</span><span class="quote-value">${days} 天</span></div>
+        </div>
+        
+        <div class="quote-info">
+          <div class="quote-row"><span class="quote-label">联系人</span><span class="quote-value">${currentQuoteInquiry.contact_name}</span></div>
+          <div class="quote-row"><span class="quote-label">联系电话</span><span class="quote-value">${currentQuoteInquiry.contact_phone}</span></div>
+          <div class="quote-row"><span class="quote-label">邮箱</span><span class="quote-value">${currentQuoteInquiry.contact_email || '-'}</span></div>
+        </div>
+        
+        <div class="quote-total">报价金额：¥ ${amount}</div>
+        
+        ${remark ? `<div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">备注：${remark}</div>` : ''}
+        
+        <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd;">
+          <div style="font-size: 14px; color: #666;">重庆恒慈国际贸易有限公司有限公司</div>
+          <div style="font-size: 12px; color: #999; margin-top: 4px;">电话：13648336221 | 邮箱：z13648336221@gmail.com | 地址：重庆市南岸区</div>
+        </div>
+      `;
+      
+      document.getElementById('printContent').innerHTML = printHtml;
+      window.print();
+    }
+
+    function showChangePwdModal() {
+      document.getElementById('changePwdModal').classList.add('show');
+      document.getElementById('changePwdForm').reset();
+      document.getElementById('pwdAlert').innerHTML = '';
+    }
+
+    function closeChangePwdModal() {
+      document.getElementById('changePwdModal').classList.remove('show');
+    }
+
+    async function changePassword(event) {
+      event.preventDefault();
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (newPassword !== confirmPassword) {
+        document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-error">两次输入的新密码不一致</div>';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/auth/change-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ oldPassword, newPassword })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-success">密码修改成功！</div>';
+          setTimeout(closeChangePwdModal, 1500);
+        } else {
+          document.getElementById('pwdAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+        }
+      } catch (error) {
+        document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-error">网络错误</div>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        loadInquiries();
+      }
+    });
+  </script>
+</body>
+</html>

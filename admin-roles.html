@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>角色管理 - 重庆恒慈国际贸易有限公司</title>
+  <meta name="description" content="重庆恒慈国际贸易有限公司管理后台 - 角色权限管理" />
+  <meta name="keywords" content="权限管理,角色管理,后台管理" />
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">🚢 恒慈国际贸易管理</div>
+    <nav>
+      <a href="admin-dashboard.html">📊 仪表盘</a>
+      <a href="admin.html">📰 新闻管理</a>
+      <a href="admin-orders.html">📦 订单管理</a>
+      <a href="admin-customers.html">👥 客户管理</a>
+      <a href="admin-quotes.html">💰 报价管理</a>
+      <a href="admin-inquiry.html">📋 询价管理</a>
+      <a href="admin-chat.html">💬 客服管理</a>
+      <a href="admin-reports.html">📈 数据分析</a>
+      <a href="admin-roles.html" class="active">🔐 权限管理</a>
+      <a href="admin-logs.html">🔒 登录日志</a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <h1>🔐 权限管理</h1>
+      <div class="user-info">
+        <span class="user-name" id="userName">管理员</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">角色列表</div>
+        <button class="btn btn-primary" onclick="showAddRoleModal()">+ 创建角色</button>
+      </div>
+      
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>角色名称</th>
+            <th>角色标识</th>
+            <th>权限</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="roleTableBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">管理员列表</div>
+        <button class="btn btn-primary" onclick="showAddAdminModal()">+ 添加管理员</button>
+      </div>
+      
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="roleModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="roleModalTitle">创建角色</span>
+        <button class="modal-close" onclick="closeRoleModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="roleId">
+        <div class="form-group">
+          <label>角色名称</label>
+          <input type="text" id="roleName" placeholder="如：管理员">
+        </div>
+        <div class="form-group">
+          <label>角色标识</label>
+          <input type="text" id="roleCode" placeholder="如：admin">
+        </div>
+        <div class="form-group">
+          <label>权限列表</label>
+          <div id="permissionsList">
+            <label><input type="checkbox" name="permission" value="dashboard"> 📊 仪表盘</label>
+            <label><input type="checkbox" name="permission" value="orders"> 📦 订单管理</label>
+            <label><input type="checkbox" name="permission" value="customers"> 👥 客户管理</label>
+            <label><input type="checkbox" name="permission" value="quotes"> 💰 报价管理</label>
+            <label><input type="checkbox" name="permission" value="inquiry"> 📋 询价管理</label>
+            <label><input type="checkbox" name="permission" value="news"> 📰 新闻管理</label>
+            <label><input type="checkbox" name="permission" value="chat"> 💬 客服管理</label>
+            <label><input type="checkbox" name="permission" value="reports"> 📈 数据分析</label>
+            <label><input type="checkbox" name="permission" value="roles"> 🔐 权限管理</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeRoleModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveRole()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="adminModalTitle">添加管理员</span>
+        <button class="modal-close" onclick="closeAdminModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="adminId">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="adminUsername" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="adminPassword" placeholder="请输入密码">
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input type="password" id="adminPasswordConfirm" placeholder="请再次输入密码">
+        </div>
+        <div class="form-group">
+          <label>角色</label>
+          <select id="adminRole"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAdminModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveAdmin()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let rolesData = [];
+    let adminsData = [];
+
+    async function loadRoles() {
+      try {
+        const response = await fetch(`${API_URL}/roles`, { credentials: 'include' });
+        const result = await response.json();
+        if (result.success) {
+          rolesData = result.data;
+          renderRoles();
+        }
+      } catch (error) {
+        console.error('加载角色失败:', error);
+      }
+    }
+
+    async function loadAdmins() {
+      try {
+        const response = await fetch(`${API_URL}/admins`, { credentials: 'include' });
+        const result = await response.json();
+        if (result.success) {
+          adminsData = result.data;
+          renderAdmins();
+        }
+      } catch (error) {
+        console.error('加载管理员失败:', error);
+      }
+    }
+
+    function renderRoles() {
+      const tbody = document.getElementById('roleTableBody');
+      tbody.innerHTML = rolesData.map(role => `
+        <tr>
+          <td>${role.name}</td>
+          <td>${role.code}</td>
+          <td>${role.permissions ? role.permissions.join(', ') : '-'}</td>
+          <td>${formatDate(role.created_at)}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="editRole(${role.id})">编辑</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRole(${role.id})">删除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAdmins() {
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = adminsData.map(admin => {
+        const role = rolesData.find(r => r.code === admin.role);
+        return `
+          <tr>
+            <td>${admin.username}</td>
+            <td>${role ? role.name : admin.role}</td>
+            <td>${formatDate(admin.created_at)}</td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="editAdmin(${admin.id})">编辑</button>
+              ${admin.id !== 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteAdmin(${admin.id})">删除</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function showAddRoleModal() {
+      document.getElementById('roleModalTitle').textContent = '创建角色';
+      document.getElementById('roleId').value = '';
+      document.getElementById('roleName').value = '';
+      document.getElementById('roleCode').value = '';
+      document.querySelectorAll('input[name="permission"]').forEach(cb => cb.checked = false);
+      document.getElementById('roleModal').style.display = 'flex';
+    }
+
+    function closeRoleModal() {
+      document.getElementById('roleModal').style.display = 'none';
+    }
+
+    async function saveRole() {
+      const id = document.getElementById('roleId').value;
+      const name = document.getElementById('roleName').value;
+      const code = document.getElementById('roleCode').value;
+      const permissions = Array.from(document.querySelectorAll('input[name="permission"]:checked')).map(cb => cb.value);
+
+      if (!name || !code) {
+        alert('请填写角色名称和标识');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/roles${id ? '/' + id : ''}`, {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ name, code, permissions })
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert(id ? '角色更新成功' : '角色创建成功');
+          closeRoleModal();
+          loadRoles();
+          loadAdmins();
+        } else {
+          alert(result.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    function editRole(id) {
+      const role = rolesData.find(r => r.id === id);
+      if (role) {
+        document.getElementById('roleModalTitle').textContent = '编辑角色';
+        document.getElementById('roleId').value = role.id;
+        document.getElementById('roleName').value = role.name;
+        document.getElementById('roleCode').value = role.code;
+        document.querySelectorAll('input[name="permission"]').forEach(cb => {
+          cb.checked = role.permissions && role.permissions.includes(cb.value);
+        });
+        document.getElementById('roleModal').style.display = 'flex';
+      }
+    }
+
+    async function deleteRole(id) {
+      if (!confirm('确定要删除这个角色吗？')) return;
+      try {
+        const response = await fetch(`${API_URL}/roles/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('删除成功');
+          loadRoles();
+        } else {
+          alert(result.message || '删除失败');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    function showAddAdminModal() {
+      document.getElementById('adminModalTitle').textContent = '添加管理员';
+      document.getElementById('adminId').value = '';
+      document.getElementById('adminUsername').value = '';
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('adminPasswordConfirm').value = '';
+      populateRoleSelect();
+      document.getElementById('adminModal').style.display = 'flex';
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').style.display = 'none';
+    }
+
+    function populateRoleSelect() {
+      const select = document.getElementById('adminRole');
+      select.innerHTML = rolesData.map(role => 
+        `<option value="${role.code}">${role.name}</option>`
+      ).join('');
+    }
+
+    async function saveAdmin() {
+      const id = document.getElementById('adminId').value;
+      const username = document.getElementById('adminUsername').value;
+      const password = document.getElementById('adminPassword').value;
+      const passwordConfirm = document.getElementById('adminPasswordConfirm').value;
+      const role = document.getElementById('adminRole').value;
+
+      if (!username) {
+        alert('请填写用户名');
+        return;
+      }
+      if (!id && (!password || password !== passwordConfirm)) {
+        alert('请填写密码并确保两次输入一致');
+        return;
+      }
+
+      try {
+        const data = { username, role };
+        if (password) data.password = password;
+        
+        const response = await fetch(`${API_URL}/admins${id ? '/' + id : ''}`, {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert(id ? '管理员更新成功' : '管理员添加成功');
+          closeAdminModal();
+          loadAdmins();
+        } else {
+          alert(result.message || '操作失败');
+        }
+      } catch (error) {
+        alert('操作失败');
+      }
+    }
+
+    function editAdmin(id) {
+      const admin = adminsData.find(a => a.id === id);
+      if (admin) {
+        document.getElementById('adminModalTitle').textContent = '编辑管理员';
+        document.getElementById('adminId').value = admin.id;
+        document.getElementById('adminUsername').value = admin.username;
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPasswordConfirm').value = '';
+        populateRoleSelect();
+        document.getElementById('adminRole').value = admin.role;
+        document.getElementById('adminModal').style.display = 'flex';
+      }
+    }
+
+    async function deleteAdmin(id) {
+      if (!confirm('确定要删除这个管理员吗？')) return;
+      try {
+        const response = await fetch(`${API_URL}/admins/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const result = await response.json();
+        if (result.success) {
+          alert('删除成功');
+          loadAdmins();
+        } else {
+          alert(result.message || '删除失败');
+        }
+      } catch (error) {
+        alert('删除失败');
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleString('zh-CN');
+    }
+
+    function logout() {
+      fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
+        .then(() => {
+          window.location.href = 'admin-login.html';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRoles();
+      loadAdmins();
+    });
+  </script>
+</body>
+</html>
