@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { checkContentSafety, getSafetyWarning } = require('../utils/content-filter');
+const { validateVisitorId, normalizeVisitorId, checkVisitorIdAbuse } = require('../utils/visitor-validator');
 
 // 获取所有聊天会话（管理员）
 router.get('/sessions', authMiddleware, async (req, res) => {
@@ -99,9 +101,45 @@ router.post('/user', async (req, res) => {
       return res.status(400).json({ success: false, message: '缺少必要参数' });
     }
     
+    // 标准化访客 ID
+    const normalizedVisitorId = normalizeVisitorId(visitorId);
+    
+    // 验证访客 ID
+    const visitorValidation = validateVisitorId(normalizedVisitorId, { strictMode: true });
+    if (!visitorValidation.valid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: visitorValidation.error || '访客 ID 无效' 
+      });
+    }
+    
+    // 检查访客 ID 滥用
+    const abuseCheck = await checkVisitorIdAbuse(normalizedVisitorId, db);
+    if (abuseCheck.isAbused) {
+      return res.status(429).json({ 
+        success: false, 
+        message: abuseCheck.reason || '消息发送过于频繁，请稍后再试' 
+      });
+    }
+    
+    // 内容安全检查
+    const contentCheck = checkContentSafety(message, {
+      checkSensitive: true,
+      checkSpam: true,
+      maxLength: 500,
+      minLength: 1
+    });
+    
+    if (!contentCheck.safe) {
+      return res.status(400).json({ 
+        success: false, 
+        message: getSafetyWarning(contentCheck) || '消息内容不符合要求' 
+      });
+    }
+    
     const newChat = {
       id: null,
-      visitorId,
+      visitorId: normalizedVisitorId,
       visitorName: visitorName || '访客',
       sender: 'visitor',
       message: message.trim(),
@@ -117,7 +155,7 @@ router.post('/user', async (req, res) => {
       setTimeout(async () => {
         const replyChat = {
           id: null,
-          visitorId,
+          visitorId: normalizedVisitorId,
           visitorName: '客服',
           sender: 'admin',
           adminName: '智能客服',
