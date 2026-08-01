@@ -3,29 +3,13 @@ const router = express.Router();
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const path = require('path');
-const multer = require('multer');
+const { createSecureUpload } = require('../middleware/secure-upload');
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads/news'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: function (req, file, cb) {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('不支持的文件类型'));
-    }
-  }
+// 使用安全上传中间件
+const upload = createSecureUpload({
+  uploadDir: path.join(__dirname, '../secure-uploads/news'),
+  maxFileSize: 50 * 1024 * 1024, // 50MB
+  enableVirusScan: true // 启用病毒扫描
 });
 
 const getMessages = (lang) => {
@@ -163,10 +147,10 @@ router.post('/', authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }, 
     let video_url = body.video_url || '';
     
     if (files.image && files.image[0]) {
-      image_url = '/uploads/news/' + files.image[0].filename;
+      image_url = '/api/files/news/' + files.image[0].filename;
     }
     if (files.video && files.video[0]) {
-      video_url = '/uploads/news/' + files.video[0].filename;
+      video_url = '/api/files/news/' + files.video[0].filename;
     }
     
     if (!title_zh || !content_zh || !category) {
@@ -214,10 +198,10 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }
     let video_url = body.video_url || '';
     
     if (files.image && files.image[0]) {
-      image_url = '/uploads/news/' + files.image[0].filename;
+      image_url = '/api/files/news/' + files.image[0].filename;
     }
     if (files.video && files.video[0]) {
-      video_url = '/uploads/news/' + files.video[0].filename;
+      video_url = '/api/files/news/' + files.video[0].filename;
     }
     
     const news = await db.get('news', { id: parseInt(req.params.id) });

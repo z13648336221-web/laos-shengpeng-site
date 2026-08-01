@@ -19,11 +19,12 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:", "/api/files/"],
       connectSrc: ["'self'", "https://api.qrserver.com"],
       fontSrc: ["'self'", "data:"],
       objectSrc: ["'none'"],
       frameSrc: ["'none'"],
+      mediaSrc: ["'self'", "blob:", "/api/files/"],
     }
   },
   crossOriginEmbedderPolicy: false,
@@ -131,9 +132,15 @@ const roleRoutes = require('./routes/roles');
 const adminRoutes = require('./routes/admins');
 const logRoutes = require('./routes/logs');
 const couponRoutes = require('./routes/coupon');
+const filesRoutes = require('./routes/files');
 
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/inquiry', inquiryLimiter);
+app.use('/api/files', rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 每个IP 15分钟内最多100次文件访问
+  message: '文件访问请求过于频繁，请稍后再试'
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inquiry', inquiryRoutes);
@@ -148,6 +155,7 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/coupon', couponRoutes);
+app.use('/api/files', filesRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
