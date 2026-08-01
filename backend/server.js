@@ -76,6 +76,16 @@ const inquiryLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// 聊天接口速率限制（更严格，防止刷屏）
+const chatLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1分钟窗口
+  max: 5,                   // 每个IP每分钟最多5条消息
+  message: { success: false, message: '消息发送过于频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false // 成功的请求也计入限制
+});
+
 // 新闻列表和详情接口使用更宽松的速率限制（只读操作）
 const newsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -150,7 +160,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/quotes', quoteRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chat', chatLimiter, chatRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/logs', logRoutes);
