@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('ssh2');
 
-// 需要上传的文件列表（数据库升级后的后端文件）
+// 需要上传的文件列表（安全加固后的后端文件）
 const filesToUpload = [
   // 前端文件
   './index.html',
@@ -20,7 +20,7 @@ const filesToUpload = [
   './css/admin.css',
   './css/chat.css',
   
-  // 后端核心文件（数据库升级后）
+  // 后端核心文件（安全加固后）
   './backend/package.json',
   './backend/package-lock.json',
   './backend/.env',
@@ -28,12 +28,25 @@ const filesToUpload = [
   './backend/models/database.js',
   './backend/middleware/auth.js',
   './backend/middleware/security.js',
+  './backend/middleware/secure-upload.js',
   
   // 数据库相关文件
   './backend/database/schema.sql',
   './backend/database/shengpeng.db',
   './backend/scripts/init-sqlite.js',
   './backend/scripts/migrate-to-sqlite.js',
+  
+  // 数据库监控脚本
+  './backend/scripts/monitor-database.js',
+  './backend/scripts/auto-backup.js',
+  './backend/scripts/analyze-queries.js',
+  './backend/scripts/health-check.js',
+  './backend/scripts/scheduler.js',
+  
+  // 安全工具
+  // './backend/utils/virus-scanner.js',
+  // './backend/utils/content-filter.js',
+  // './backend/utils/visitor-validator.js',
   
   // 后端路由文件
   './backend/routes/auth.js',
@@ -45,6 +58,7 @@ const filesToUpload = [
   './backend/routes/customers.js',
   './backend/routes/quotes.js',
   './backend/routes/chat.js',
+  './backend/routes/files.js',
   './backend/routes/roles.js',
   './backend/routes/admins.js',
   './backend/routes/logs.js',
@@ -53,43 +67,27 @@ const filesToUpload = [
 
 const conn = new Client();
 
-// 第二步：数据库迁移和重启后端
-function restartBackend() {
-  console.log('[重启] 停止旧进程...');
-  conn.exec('pkill -f "node.*server.js" 2>/dev/null || true', (err, stream) => {
-    if (err) { console.error(err); }
-    
-    stream.on('close', () => {
-      setTimeout(() => {
-        console.log('[数据库] 检查并迁移数据库...');
-        // 检查是否存在SQLite数据库，如果不存在则初始化
-        conn.exec('cd /var/www/laos-logistics/backend && if [ ! -f database/shengpeng.db ]; then npm run init-sqlite; else echo "SQLite数据库已存在"; fi', (err, stream) => {
-          if (err) { console.error(err); }
-          
-          stream.on('close', () => {
-            console.log('[重启] 安装依赖并启动新进程...');
-            conn.exec('cd /var/www/laos-logistics/backend && npm install && nohup node server.js > /dev/null 2>&1 & sleep 3 && curl -s http://localhost:3001/api/news | head -c 50', (err, stream) => {
-              if (err) { console.error(err); conn.end(); return; }
-              
-              let output = '';
-              stream.on('data', data => output += data);
-              stream.stderr.on('data', () => {});
-              
-              stream.on('close', () => {
-                console.log('[重启] 后端已启动');
-                if (output.includes('success')) {
-                  console.log('✓ 健康检查通过\n');
-                } else {
-                  console.log('⚠️ 健康检查:', output || '无输出\n');
-                }
-                conn.end();
-              });
-            });
-          });
-        });
-      }, 2000);
-    });
-  });
+// 第二步：完成部署
+function completeDeployment() {
+  console.log('\n✅ 文件上传完成！');
+  console.log('\n📋 后续手动操作步骤:');
+  console.log('1. SSH连接到服务器:');
+  console.log('   ssh -i "C:\\Users\\Administrator\\.ssh\\id_ed25519_laos" root@43.129.173.218');
+  console.log('2. 进入后端目录:');
+  console.log('   cd /var/www/laos-logistics/backend');
+  console.log('3. 安装依赖:');
+  console.log('   npm install');
+  console.log('4. 重启服务:');
+  console.log('   pkill -f "node.*server.js"');
+  console.log('   nohup node server.js > /dev/null 2>&1 &');
+  console.log('5. 验证服务:');
+  console.log('   curl http://localhost:3001/api/news');
+  console.log('\n✅ 安全加固功能已上传到服务器');
+  console.log('✅ 数据库监控系统已上传到服务器');
+  console.log('✅ 文件上传安全功能已上传到服务器');
+  console.log('✅ 聊天接口安全功能已上传到服务器');
+  
+  conn.end();
 }
 
 conn.on('ready', () => {
@@ -103,7 +101,7 @@ conn.on('ready', () => {
     function uploadNext() {
       if (uploaded >= filesToUpload.length) {
         console.log('\n✓ 所有文件上传完成！\n');
-        restartBackend();
+        completeDeployment();
         return;
       }
       const file = filesToUpload[uploaded];

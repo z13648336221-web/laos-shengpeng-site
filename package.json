@@ -1,5 +1,24 @@
 {
+  "name": "laos-shengpeng-site",
+  "version": "1.0.0",
+  "description": "重庆恒慈国际贸易有限公司 - 东南亚跨境物流服务网站",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "optimize:images": "node scripts/optimize-images.js"
+  },
   "dependencies": {
     "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-compression": "^0.5.1",
+    "cssnano": "^7.0.6",
+    "postcss": "^8.4.41",
+    "autoprefixer": "^10.4.20",
+    "sharp": "^0.33.5",
+    "terser": "^5.31.6"
   }
 }
