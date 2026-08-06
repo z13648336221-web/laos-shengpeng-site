@@ -1,4 +1,4 @@
-window._translations_zh = {
+export default {
   nav: { home: '首页', services: '业务介绍 ▾', inquiry: '在线询价', tracking: '货物追踪', about: '关于我们', news: '新闻资讯', cta: '立即询价' },
   services: { rail: '🚂 中老铁路陆运', road: '🚛 中老公路运输', thaiRail: '🚂 中老泰铁路联运', vietRail: '🚂 中越铁路', thai: '🚢 泰国海运', viet: '⚓ 越南海运', railTitle: '中老铁路陆运', roadTitle: '中老公路运输', thaiRailTitle: '中老泰铁路联运', vietRailTitle: '中越铁路', thaiTitle: '泰国海运', vietTitle: '越南海运' },
   lang: { zh: '中文', en: 'EN', vi: 'VN' },

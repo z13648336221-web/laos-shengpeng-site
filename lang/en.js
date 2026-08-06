@@ -1,4 +1,4 @@
-window._translations_en = {
+export default {
   nav: { home: 'Home', services: 'Services ▾', inquiry: 'Get Quote', tracking: 'Tracking', about: 'About Us', news: 'News', cta: 'Get Quote Now' },
   services: { rail: '🚂 China-Laos Railway', road: '🚛 China-Laos Road', thaiRail: '🚂 China-Laos-Thailand Rail', vietRail: '🚂 China-Vietnam Railway', thai: '🚢 Thailand Sea Freight', viet: '⚓ Vietnam Sea Freight', railTitle: 'China-Laos Railway', roadTitle: 'China-Laos Road Transport', thaiRailTitle: 'China-Laos-Thailand Rail Link', vietRailTitle: 'China-Vietnam Railway', thaiTitle: 'Thailand Sea Freight', vietTitle: 'Vietnam Sea Freight' },
   lang: { zh: 'Chinese', en: 'EN', vi: 'VN' },

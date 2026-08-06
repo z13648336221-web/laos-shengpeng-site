@@ -116,8 +116,7 @@ class I18n {
   }
 }
 
-window.i18n = new I18n();
+// Create and export instance
+const i18n = new I18n();
 
-document.addEventListener('DOMContentLoaded', function() {
-  window.i18n.init();
-});
+export default i18n;

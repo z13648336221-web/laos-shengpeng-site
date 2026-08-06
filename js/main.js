@@ -3,6 +3,16 @@
  * 包含：导航、在线客服对话框、公共功能
  */
 
+// Import dependencies
+import '../lang/all.js';
+import './i18n.js';
+import './chat.js';
+
+// Initialize i18n after translations are loaded
+if (window.i18n) {
+  window.i18n.init();
+}
+
 /* =============================================
    导航栏交互
    ============================================= */
@@ -230,28 +240,29 @@ document.querySelectorAll('[data-counter]').forEach(el => {
 /* =============================================
    页面入场动画（简单fade-in）
    ============================================= */
-const fadeObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
-      fadeObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.1 });
+function initFadeInAnimations() {
+  const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
 
-document.querySelectorAll('.service-card, .adv-card, .feature-item, .case-card, .news-card, .team-card').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(20px)';
-  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-  fadeObserver.observe(el);
-});
+  document.querySelectorAll('.service-card, .adv-card, .feature-item, .case-card, .news-card, .team-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    fadeObserver.observe(el);
+  });
+}
 
 /* =============================================
    页面加载完成后的初始化
    ============================================= */
 document.addEventListener('DOMContentLoaded', function () {
-  if (window.i18n) {
-    window.i18n.init();
-  }
+  // Initialize fade-in animations
+  initFadeInAnimations();
 });
