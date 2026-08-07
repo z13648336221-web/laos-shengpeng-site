@@ -3,16 +3,6 @@
  * 包含：导航、在线客服对话框、公共功能
  */
 
-// Import dependencies
-import '../lang/all.js';
-import './i18n.js';
-import './chat.js';
-
-// Initialize i18n after translations are loaded
-if (window.i18n) {
-  window.i18n.init();
-}
-
 /* =============================================
    导航栏交互
    ============================================= */
@@ -263,6 +253,11 @@ function initFadeInAnimations() {
    页面加载完成后的初始化
    ============================================= */
 document.addEventListener('DOMContentLoaded', function () {
+  // Initialize i18n
+  if (window.i18n) {
+    window.i18n.init();
+  }
+  
   // Initialize fade-in animations
   initFadeInAnimations();
 });
