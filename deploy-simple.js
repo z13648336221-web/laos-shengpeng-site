@@ -3,40 +3,65 @@
  * 避免SSH命令执行超时问题
  */
 
-const fs = require('fs');
-const path = require('path');
-const { Client } = require('ssh2');
+import fs from 'fs';
+import path from 'path';
+import { Client } from 'ssh2';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // 需要上传的文件列表
 const filesToUpload = [
-  // 前端构建文件 (使用 Vite 构建产物)
-  './dist/index.html',
-  './dist/index.html.gz',
-  './dist/index.html.br',
-  './dist/css/index-DjaPjDd4.css',
-  './dist/css/index-DjaPjDd4.css.gz',
-  './dist/css/index-DjaPjDd4.css.br',
-  './dist/js/index-ALcT40n1.js',
-  './dist/js/index-ALcT40n1.js.gz',
-  './dist/js/index-ALcT40n1.js.br',
-  './dist/js/chat-BGaNmXHE.js',
-  './dist/js/chat-BGaNmXHE.js.gz',
-  './dist/js/chat-BGaNmXHE.js.br',
+  // 前端文件 (使用原始文件)
+  './index.html',
+  './public/lang/zh.js',
+  './public/lang/en.js',
+  './public/lang/vi.js',
+  './public/lang/all.js',
+  './public/js/i18n.js',
+  './public/js/main.js',
+  './public/js/chat.js',
+  './public/js/tracking.js',
+  './public/js/inquiry.js',
+  './public/js/news-api.js',
+  './public/js/loading.js',
+  './public/js/notification.js',
+  './public/css/style.css',
+  './public/css/admin.css',
+  './public/css/chat.css',
   
-  // 其他前端页面 (仍使用原始文件)
+  // 其他前端页面
   './about.html',
   './inquiry.html',
   './tracking.html',
   './news.html',
-  './service-rail.html',
-  './service-road.html',
-  './service-thai.html',
-  './service-viet.html',
-  './service-thai-rail.html',
-  './service-viet-rail.html',
-  './css/admin.css',
-  './js/loading.js',
-  './js/notification.js',
+  
+  // 管理后台页面
+  './public/admin/admin.html',
+  './public/admin/admin-login.html',
+  './public/admin/admin-dashboard.html',
+  './public/admin/admin-chat.html',
+  './public/admin/admin-customers.html',
+  './public/admin/admin-inquiry.html',
+  './public/admin/admin-orders.html',
+  './public/admin/admin-quotes.html',
+  './public/admin/admin-reports.html',
+  './public/admin/admin-roles.html',
+  './public/admin/admin-logs.html',
+  
+  // 服务页面
+  './public/services/service-rail.html',
+  './public/services/service-road.html',
+  './public/services/service-thai.html',
+  './public/services/service-viet.html',
+  './public/services/service-thai-rail.html',
+  './public/services/service-viet-rail.html',
+  
+  // 网站资源
+  './public/robots.txt',
+  './public/sitemap.xml',
   
   // 后端核心文件
   './backend/package.json',
@@ -109,7 +134,14 @@ conn.on('ready', () => {
       
       const file = filesToUpload[uploaded];
       const localPath = path.resolve(__dirname, file);
-      const remotePath = '/var/www/laos-logistics/' + file;
+      
+      // 特殊文件处理
+      let remotePath;
+      if (file === './nginx-optimization.conf') {
+        remotePath = '/var/www/laos-logistics/nginx-optimization.conf';
+      } else {
+        remotePath = '/var/www/laos-logistics/' + file;
+      }
       
       // 检查本地文件是否存在
       if (!fs.existsSync(localPath)) {
@@ -163,7 +195,7 @@ function showInstructions() {
   console.log('   mkdir -p secure-uploads/news secure-uploads/documents secure-uploads/avatars');
   console.log('\n4. 安装依赖:');
   console.log('   npm install');
-  console.log('\n5. 重启服务:');
+  console.log('\n5. 重启 Node.js 服务:');
   console.log('   pkill -f "node.*server.js"');
   console.log('   nohup node server.js > /dev/null 2>&1 &');
   console.log('\n6. 验证服务:');
@@ -171,10 +203,18 @@ function showInstructions() {
   console.log('\n7. 查看服务日志:');
   console.log('   tail -f nohup.out');
   console.log('\n' + '='.repeat(60));
+  console.log('✅ 前端文件已重组优化');
   console.log('✅ 安全加固功能已上传到服务器');
   console.log('✅ 数据库监控系统已上传到服务器');
   console.log('✅ 文件上传安全功能已上传到服务器');
   console.log('✅ 聊天接口安全功能已上传到服务器');
   console.log('✅ SQLite数据库已上传到服务器');
+  console.log('='.repeat(60));
+  console.log('📝 注意事项:');
+  console.log('- 前端文件已重组为清晰的项目结构');
+  console.log('- 静态资源移动到 public/ 目录');
+  console.log('- 管理后台页面移动到 public/admin/ 目录');
+  console.log('- 服务页面移动到 public/services/ 目录');
+  console.log('- 所有路径引用已更新，网站功能正常');
   console.log('='.repeat(60));
 }

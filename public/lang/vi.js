@@ -1,4 +1,4 @@
-export default {
+window._translations_vi = {
   nav: { home: 'Trang chủ', services: 'Dịch vụ ▾', inquiry: 'Báo giá', tracking: 'Theo dõi', about: 'Về chúng tôi', news: 'Tin tức', cta: 'Nhận báo giá' },
   services: { rail: '🚂 Đường sắt Trung-Lào', road: '🚛 Đường bộ Trung-Lào', thaiRail: '🚂 Đường sắt Trung-Lào-Thái', vietRail: '🚂 Đường sắt Trung-Việt', thai: '🚢 Vận tải biển Thái Lan', viet: '⚓ Vận tải biển Việt Nam', railTitle: 'Đường sắt Trung-Lào', roadTitle: 'Vận tải đường bộ Trung-Lào', thaiRailTitle: 'Đường sắt Trung-Lào-Thái Lan', vietRailTitle: 'Đường sắt Trung-Việt', thaiTitle: 'Vận tải biển Thái Lan', vietTitle: 'Vận tải biển Việt Nam' },
   lang: { zh: 'Trung', en: 'EN', vi: 'VN' },

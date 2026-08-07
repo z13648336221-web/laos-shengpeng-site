@@ -62,9 +62,9 @@
     }
   }
   </script>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/chat.css" />
-  <script type="module" src="/lang/all.js"></script>
+  <link rel="stylesheet" href="public/css/style.css" />
+  <link rel="stylesheet" href="public/css/chat.css" />
+  <script src="public/js/loading.js"></script>
 </head>
 <body>
 
@@ -80,12 +80,12 @@
       <li class="dropdown">
         <a href="#" data-i18n="nav.services">业务介绍 ▾</a>
         <ul class="dropdown-menu">
-          <li><a href="service-rail.html" data-i18n="services.rail">🚂 中老铁路陆运</a></li>
-          <li><a href="service-road.html" data-i18n="services.road">🚛 中老公路运输</a></li>
-          <li><a href="service-thai-rail.html" data-i18n="services.thaiRail">🚂 中老泰铁路联运</a></li>
-          <li><a href="service-viet-rail.html" data-i18n="services.vietRail">🚂 中越铁路</a></li>
-          <li><a href="service-thai.html" data-i18n="services.thai">🚢 泰国海运</a></li>
-          <li><a href="service-viet.html" data-i18n="services.viet">⚓ 越南海运</a></li>
+          <li><a href="services/service-rail.html" data-i18n="services.rail">🚂 中老铁路陆运</a></li>
+          <li><a href="services/service-road.html" data-i18n="services.road">🚛 中老公路运输</a></li>
+          <li><a href="services/service-thai-rail.html" data-i18n="services.thaiRail">🚂 中老泰铁路联运</a></li>
+          <li><a href="services/service-viet-rail.html" data-i18n="services.vietRail">🚂 中越铁路</a></li>
+          <li><a href="services/service-thai.html" data-i18n="services.thai">🚢 泰国海运</a></li>
+          <li><a href="services/service-viet.html" data-i18n="services.viet">⚓ 越南海运</a></li>
         </ul>
       </li>
       <li><a href="inquiry.html" data-i18n="nav.inquiry">在线询价</a></li>
@@ -357,11 +357,17 @@
     <div class="footer-bottom">
       <div class="footer-logo">🚢 重庆恒慈国际贸易有限公司</div>
       <span data-i18n="footer.copyright">© 2026 重庆恒慈国际贸易有限公司 版权所有</span>
-      <a href="admin-login.html" style="color:var(--gray-500);font-size:12px;text-decoration:none;opacity:0.6;">后台登录</a>
+      <a href="public/admin/admin-login.html" style="color:var(--gray-500);font-size:12px;text-decoration:none;opacity:0.6;">后台登录</a>
     </div>
   </div>
 </footer>
 
-<script type="module" src="/js/main.js"></script>
+<script src="public/lang/zh.js"></script>
+<script src="public/lang/en.js"></script>
+<script src="public/lang/vi.js"></script>
+<script src="public/lang/all.js"></script>
+<script src="public/js/i18n.js"></script>
+<script src="public/js/main.js"></script>
+<script src="public/js/chat.js"></script>
 </body>
 </html>
