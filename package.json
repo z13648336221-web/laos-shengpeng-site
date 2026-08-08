@@ -2,6 +2,7 @@
   "name": "laos-shengpeng-site",
   "version": "1.0.0",
   "description": "重庆恒慈国际贸易有限公司 - 东南亚跨境物流服务网站",
+  "type": "module",
   "scripts": {
     "optimize:images": "node scripts/optimize-images.js"
   },

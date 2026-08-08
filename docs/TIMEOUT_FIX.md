@@ -24,7 +24,7 @@ Process exited with status 143 from signal TERM
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     timeout: 300s              # 连接超时
-    script_timeout: 120s         # 脚本执行超时
+    command_timeout: 120s     # 脚本执行超时
     script: |
       mkdir -p /var/www/laos-logistics/public/admin
       mkdir -p /var/www/laos-logistics/public/services
@@ -39,7 +39,7 @@ Process exited with status 143 from signal TERM
 | 参数 | 值 | 说明 |
 |------|-----|------|
 | `timeout` | 300s | 连接超时时间 (5分钟) |
-| `script_timeout` | 120s | 脚本执行超时 (2分钟) |
+| `command_timeout` | 120s | 脚本执行超时 (2分钟) |
 
 ### 不同步骤的超时配置
 
