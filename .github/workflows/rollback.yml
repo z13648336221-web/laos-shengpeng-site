@@ -1,0 +1,63 @@
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_timestamp:
+        description: 'Backup timestamp to rollback to (format: YYYYMMDD_HHMMSS)'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Rollback to backup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            BACKUP_PATH="/var/www/backups/laos-logistics_${{ inputs.backup_timestamp }}"
+            
+            if [ ! -d "$BACKUP_PATH" ]; then
+              echo "❌ Backup not found: $BACKUP_PATH"
+              echo "Available backups:"
+              ls -la /var/www/backups/
+              exit 1
+            fi
+            
+            echo "🔄 Rolling back to: $BACKUP_PATH"
+            
+            # Stop current service
+            pkill -f "node.*server.js" || true
+            
+            # Remove current deployment
+            rm -rf /var/www/laos-logistics
+            
+            # Restore from backup
+            cp -r "$BACKUP_PATH" /var/www/laos-logistics
+            
+            # Restart service
+            cd /var/www/laos-logistics/backend
+            nohup node server.js > /dev/null 2>&1 &
+            
+            sleep 3
+            
+            # Verify rollback
+            curl -f http://localhost:3001/api/news || exit 1
+            
+            echo "✅ Rollback completed successfully"
+            echo "📦 Restored from: $BACKUP_PATH"
+      
+      - name: Rollback summary
+        run: |
+          echo "🔄 Rollback completed!"
+          echo "📦 Backup timestamp: ${{ inputs.backup_timestamp }}"
+          echo "🌐 Server: ${{ secrets.SERVER_HOST }}"
