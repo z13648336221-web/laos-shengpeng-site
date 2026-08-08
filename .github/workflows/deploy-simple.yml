@@ -1,4 +1,4 @@
-name: Deploy to Production Server
+name: Simple Deploy to Production Server
 
 on:
   push:
@@ -15,10 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@master
         with:
-          node-version: '18'
+          host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
+          username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 60s
+          script: |
+            echo "SSH connection successful"
+            pwd
+            whoami
+            date
       
       - name: Create backup timestamp
         id: backup
@@ -36,8 +46,12 @@ jobs:
           script: |
             echo "Creating backup timestamp: ${{ steps.backup.outputs.timestamp }}"
             mkdir -p /var/www/backups
-            cp -r /var/www/laos-logistics /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}
-            echo "Backup created: /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}"
+            if [ -d "/var/www/laos-logistics" ]; then
+              cp -r /var/www/laos-logistics /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}
+              echo "Backup created: /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}"
+            else
+              echo "No existing deployment to backup"
+            fi
       
       - name: Create remote directories
         uses: appleboy/ssh-action@master
@@ -47,7 +61,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          command_timeout: 120s
+          command_timeout: 60s
           script: |
             mkdir -p /var/www/laos-logistics/public/admin
             mkdir -p /var/www/laos-logistics/public/services
@@ -127,7 +141,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 60s
+          command_timeout: 60s
           script: |
             pkill -f "node.*server.js" || true
             cd /var/www/laos-logistics/backend
@@ -143,7 +157,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 30s
+          command_timeout: 30s
           script: |
             curl -f http://localhost:3001/api/news || exit 1
             echo "Deployment verification successful"
@@ -156,7 +170,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 30s
+          command_timeout: 30s
           script: |
             cd /var/www/backups
             ls -t laos-logistics_* | tail -n +6 | xargs -r rm -rf
