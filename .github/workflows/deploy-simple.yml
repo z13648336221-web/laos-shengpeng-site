@@ -1,0 +1,191 @@
+name: Simple Deploy to Production Server
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 60s
+          script: |
+            echo "SSH connection successful"
+            pwd
+            whoami
+            date
+      
+      - name: Create backup timestamp
+        id: backup
+        run: echo "timestamp=$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+      
+      - name: Backup current deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 120s
+          script: |
+            echo "Creating backup timestamp: ${{ steps.backup.outputs.timestamp }}"
+            mkdir -p /var/www/backups
+            if [ -d "/var/www/laos-logistics" ]; then
+              cp -r /var/www/laos-logistics /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}
+              echo "Backup created: /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}"
+            else
+              echo "No existing deployment to backup"
+            fi
+      
+      - name: Create remote directories
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 60s
+          script: |
+            mkdir -p /var/www/laos-logistics/public/admin
+            mkdir -p /var/www/laos-logistics/public/services
+            mkdir -p /var/www/laos-logistics/public/css
+            mkdir -p /var/www/laos-logistics/public/js
+            mkdir -p /var/www/laos-logistics/public/lang
+            echo "Directories created successfully"
+      
+      - name: Upload HTML files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          source: "index.html,about.html,inquiry.html,tracking.html,news.html"
+          target: /var/www/laos-logistics/
+          strip_components: 0
+      
+      - name: Upload public directory
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          source: "public/"
+          target: /var/www/laos-logistics/
+          strip_components: 0
+      
+      - name: Upload backend directory
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          source: "backend/"
+          target: /var/www/laos-logistics/
+          strip_components: 0
+      
+      - name: Install backend dependencies
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 180s
+          script: |
+            cd /var/www/laos-logistics/backend
+            npm install --production
+      
+      - name: Create necessary directories
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 60s
+          script: |
+            mkdir -p /var/www/laos-logistics/backend/secure-uploads/news
+            mkdir -p /var/www/laos-logistics/backend/secure-uploads/documents
+            mkdir -p /var/www/laos-logistics/backend/secure-uploads/avatars
+      
+      - name: Restart Node.js service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 60s
+          script: |
+            pkill -f "node.*server.js" || true
+            cd /var/www/laos-logistics/backend
+            nohup node server.js > /dev/null 2>&1 &
+            sleep 3
+            echo "Node.js service restarted"
+      
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 30s
+          script: |
+            curl -f http://localhost:3001/api/news || exit 1
+            echo "Deployment verification successful"
+      
+      - name: Clean old backups (keep last 5)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          command_timeout: 30s
+          script: |
+            cd /var/www/backups
+            ls -t laos-logistics_* | tail -n +6 | xargs -r rm -rf
+            echo "Old backups cleaned"
+      
+      - name: Deployment summary
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "📦 Backup timestamp: ${{ steps.backup.outputs.timestamp }}"
+          echo "🌐 Server: ${{ secrets.SERVER_HOST || '43.129.173.218' }}"
+          echo "📝 Deployed to: /var/www/laos-logistics/"
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "📦 Backup is available at: /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}"
+          echo "🔄 To rollback, manually restore from backup"

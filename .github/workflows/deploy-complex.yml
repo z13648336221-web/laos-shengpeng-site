@@ -127,7 +127,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 60s
+          command_timeout: 60s
           script: |
             pkill -f "node.*server.js" || true
             cd /var/www/laos-logistics/backend
@@ -143,7 +143,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 30s
+          command_timeout: 30s
           script: |
             curl -f http://localhost:3001/api/news || exit 1
             echo "Deployment verification successful"
@@ -156,7 +156,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          script_timeout: 30s
+          command_timeout: 30s
           script: |
             cd /var/www/backups
             ls -t laos-logistics_* | tail -n +6 | xargs -r rm -rf
