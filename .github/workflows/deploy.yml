@@ -27,10 +27,10 @@ jobs:
       - name: Backup current deployment
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             echo "Creating backup timestamp: ${{ steps.backup.outputs.timestamp }}"
             mkdir -p /var/www/backups
@@ -40,10 +40,10 @@ jobs:
       - name: Deploy files to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           source: |
             index.html
             about.html
@@ -59,10 +59,10 @@ jobs:
       - name: Install backend dependencies
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             cd /var/www/laos-logistics/backend
             npm install --production
@@ -70,10 +70,10 @@ jobs:
       - name: Create necessary directories
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/news
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/documents
@@ -82,10 +82,10 @@ jobs:
       - name: Restart Node.js service
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             pkill -f "node.*server.js" || true
             cd /var/www/laos-logistics/backend
@@ -96,10 +96,10 @@ jobs:
       - name: Verify deployment
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             curl -f http://localhost:3001/api/news || exit 1
             echo "Deployment verification successful"
@@ -107,10 +107,10 @@ jobs:
       - name: Clean old backups (keep last 5)
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           script: |
             cd /var/www/backups
             ls -t laos-logistics_* | tail -n +6 | xargs -r rm -rf
@@ -120,7 +120,7 @@ jobs:
         run: |
           echo "🎉 Deployment completed successfully!"
           echo "📦 Backup timestamp: ${{ steps.backup.outputs.timestamp }}"
-          echo "🌐 Server: ${{ secrets.SERVER_HOST }}"
+          echo "🌐 Server: ${{ secrets.SERVER_HOST || '43.129.173.218' }}"
           echo "📝 Deployed to: /var/www/laos-logistics/"
       
       - name: Notify on failure
