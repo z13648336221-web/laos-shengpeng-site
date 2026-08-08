@@ -23,6 +23,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 180s
           script: |
             BACKUP_PATH="/var/www/backups/laos-logistics_${{ inputs.backup_timestamp }}"
             

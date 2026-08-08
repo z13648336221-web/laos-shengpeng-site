@@ -31,6 +31,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 120s
           script: |
             echo "Creating backup timestamp: ${{ steps.backup.outputs.timestamp }}"
             mkdir -p /var/www/backups
@@ -44,12 +46,15 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 120s
           script: |
             mkdir -p /var/www/laos-logistics/public/admin
             mkdir -p /var/www/laos-logistics/public/services
             mkdir -p /var/www/laos-logistics/public/css
             mkdir -p /var/www/laos-logistics/public/js
             mkdir -p /var/www/laos-logistics/public/lang
+            echo "Directories created successfully"
       
       - name: Upload HTML files
         uses: appleboy/scp-action@master
@@ -58,6 +63,7 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
           source: "index.html,about.html,inquiry.html,tracking.html,news.html"
           target: /var/www/laos-logistics/
           strip_components: 0
@@ -69,6 +75,7 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
           source: "public/"
           target: /var/www/laos-logistics/
           strip_components: 0
@@ -80,6 +87,7 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
           source: "backend/"
           target: /var/www/laos-logistics/
           strip_components: 0
@@ -91,6 +99,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 180s
           script: |
             cd /var/www/laos-logistics/backend
             npm install --production
@@ -102,6 +112,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 60s
           script: |
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/news
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/documents
@@ -114,6 +126,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 60s
           script: |
             pkill -f "node.*server.js" || true
             cd /var/www/laos-logistics/backend
@@ -128,6 +142,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 30s
           script: |
             curl -f http://localhost:3001/api/news || exit 1
             echo "Deployment verification successful"
@@ -139,6 +155,8 @@ jobs:
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 300s
+          script_timeout: 30s
           script: |
             cd /var/www/backups
             ls -t laos-logistics_* | tail -n +6 | xargs -r rm -rf
