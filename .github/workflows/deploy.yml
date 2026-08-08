@@ -37,22 +37,50 @@ jobs:
             cp -r /var/www/laos-logistics /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}
             echo "Backup created: /var/www/backups/laos-logistics_${{ steps.backup.outputs.timestamp }}"
       
-      - name: Deploy files to server
+      - name: Create remote directories
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            mkdir -p /var/www/laos-logistics/public/admin
+            mkdir -p /var/www/laos-logistics/public/services
+            mkdir -p /var/www/laos-logistics/public/css
+            mkdir -p /var/www/laos-logistics/public/js
+            mkdir -p /var/www/laos-logistics/public/lang
+      
+      - name: Upload HTML files
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
           username: ${{ secrets.SERVER_USER || 'root' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
-          source: |
-            index.html
-            about.html
-            inquiry.html
-            tracking.html
-            news.html
-            public/
-            backend/
-            deploy-simple.js
+          source: "index.html,about.html,inquiry.html,tracking.html,news.html"
+          target: /var/www/laos-logistics/
+          strip_components: 0
+      
+      - name: Upload public directory
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          source: "public/"
+          target: /var/www/laos-logistics/
+          strip_components: 0
+      
+      - name: Upload backend directory
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST || '43.129.173.218' }}
+          username: ${{ secrets.SERVER_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          source: "backend/"
           target: /var/www/laos-logistics/
           strip_components: 0
       
