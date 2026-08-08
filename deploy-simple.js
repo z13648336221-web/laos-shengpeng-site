@@ -105,7 +105,11 @@ const filesToUpload = [
   './backend/routes/roles.js',
   './backend/routes/admins.js',
   './backend/routes/logs.js',
-  './backend/routes/coupon.js'
+  './backend/routes/coupon.js',
+  
+  // 部署脚本
+  './scripts/auto-deploy.sh',
+  './scripts/rollback.sh'
 ];
 
 const conn = new Client();
@@ -139,6 +143,8 @@ conn.on('ready', () => {
       let remotePath;
       if (file === './nginx-optimization.conf') {
         remotePath = '/var/www/laos-logistics/nginx-optimization.conf';
+      } else if (file.startsWith('./scripts/')) {
+        remotePath = '/var/www/laos-logistics/' + file;
       } else {
         remotePath = '/var/www/laos-logistics/' + file;
       }
