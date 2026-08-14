@@ -134,38 +134,42 @@ node scripts/migrate-contract.js <路径>      # 指定其他数据库
 
 ### 运维类
 
-17. **服务进程管理**：CI 用 `pkill + nohup` 裸跑，建议 systemd/PM2 管理并开机自启
-18. **Node 版本**：服务器 Node 18 与 better-sqlite3@13（要求 Node >= 22）不兼容，需升级 Node 20+/22+
-19. **生产密钥轮换后**：需同步更新服务器上的 `backend/.env`（新密钥），否则服务重启后会话失效
+17. **服务进程管理**：线上已确认使用 **PM2**（用户 ubuntu，应用名 `logistics-backend`，fork 模式）管理服务，pkill 后会自动拉起。建议保留 PM2 作为进程守护，勿用裸 nohup。
+18. **Node 版本**：服务器 Node v20.20.2；better-sqlite3 已固定 `12.9.0`（v12.10+ 及 v13 无 Node 20 预编译二进制，且服务器缺 g++ 无法源码编译；12.9.0 是最后带 node-v115 linux-x64 预编译的版本）
+19. **文件权限**：数据库/上传目录必须属主 `ubuntu`（PM2 运行用户），否则读正常、写全部 500（询价/聊天/登录会话插入失败）。已执行 `chown -R ubuntu:ubuntu backend/database backend/uploads backend/secure-uploads`
+20. **生产密钥轮换后**：已同步服务器 `backend/.env`（新 SESSION_SECRET/COOKIE_SECRET），会话已用新密钥
 
 ---
 
-## 六、部署上线步骤（修复后）
+## 六、部署上线步骤（已执行完成 ✅）
+
+> **2026-08-15 实际部署结果**：全部文件已上传（84 个文件）、依赖重装（better-sqlite3 12.9.0）、数据库已迁移（自动备份）、PM2 服务正常运行。线上验证全部通过：health/news/tracking/chat/inquiry 均 200，管理员密码已从默认值升级。
 
 ```bash
 # 1. 本地验证
 cd backend && npm start          # 确认服务启动、冒烟测试通过
 
 # 2. 提交代码（包含 git rm --cached 的清理）
-git add -A && git commit -m "fix: 后端启动修复、数据库契约迁移、前端路径与 i18n 修复、仓库清理"
+git add -A && git commit -m "fix: ..."
 
 # 3. 部署（CI 或手动脚本，已支持自动创建远程目录）
 node deploy-simple.js            # 需配置好 SSH 私钥
 
-# 4. 服务器端
+# 4. 服务器端（PM2 管理，用户 ubuntu）
 cd /var/www/laos-logistics/backend
-npm install --production
-# 确保 .env 使用新的 SESSION_SECRET/COOKIE_SECRET
-nohup node server.js > server.log 2>&1 &
+npm install --production         # better-sqlite3 12.9.0（Node 20 预编译）
+chown -R ubuntu:ubuntu database uploads secure-uploads   # 关键！否则写接口 500
+su - ubuntu -c 'pm2 restart logistics-backend'
 
-# 5. 验证
-curl http://localhost:3001/api/health
-curl http://localhost:3001/api/news
+# 5. 修改管理员密码（避免默认密码）
+#    方式A：启动前在 .env 加 ADMIN_INITIAL_PASSWORD=<强密码>，启动时自动升级
+#    方式B：登录后台后 /api/auth/change-password
+# 服务器管理员密码已由部署流程设置，请向部署负责人索取
 
-# 6. 线上检查
-#   https://hengciglobal.com/api/health        -> 200
-#   https://hengciglobal.com/public/services/service-rail.html -> 200
-#   修改默认管理员密码：登录后台后 /api/auth/change-password
+# 6. 线上验证
+curl https://hengciglobal.com/api/health        # -> 200
+curl https://hengciglobal.com/api/news          # -> 200 真实新闻标题
+curl https://hengciglobal.com/api/tracking/SP20240001  # -> 200 时间线正常
 ```
 
 ---
