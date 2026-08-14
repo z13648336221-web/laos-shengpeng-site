@@ -51,7 +51,17 @@ function init() {
 }
 
 /**
+ * 判断字符串是否为裸表名（无空白字符），用于兼容 db.query('table') 调用
+ */
+function isTableName(str) {
+  return typeof str === 'string' && !/\s/.test(str.trim());
+}
+
+/**
  * 执行查询并返回所有结果
+ * 兼容两种调用方式:
+ *   db.query('table')                          -> SELECT * FROM table
+ *   db.query('SELECT * FROM t WHERE x = ?', [1]) -> 原生 SQL
  */
 function query(sql, params = []) {
   if (!db) {
@@ -59,6 +69,10 @@ function query(sql, params = []) {
   }
   
   try {
+    // 兼容旧接口: db.query('表名') 直接查询整张表
+    if (isTableName(sql)) {
+      sql = `SELECT * FROM ${sql}`;
+    }
     const stmt = db.prepare(sql);
     return stmt.all(...params);
   } catch (error) {
@@ -69,6 +83,9 @@ function query(sql, params = []) {
 
 /**
  * 执行查询并返回单个结果
+ * 兼容两种调用方式:
+ *   db.get('table', { col: val })              -> SELECT * FROM table WHERE col = ? LIMIT 1
+ *   db.get('SELECT * FROM t WHERE x = ?', [1]) -> 原生 SQL
  */
 function get(sql, params = []) {
   if (!db) {
@@ -76,6 +93,13 @@ function get(sql, params = []) {
   }
   
   try {
+    // 兼容旧接口: db.get('表名', { 条件对象 })
+    if (typeof params === 'object' && !Array.isArray(params) && params !== null) {
+      const whereClause = Object.keys(params).map(col => `${col} = ?`).join(' AND ');
+      const values = Object.values(params);
+      sql = `SELECT * FROM ${sql} WHERE ${whereClause} LIMIT 1`;
+      params = values;
+    }
     const stmt = db.prepare(sql);
     return stmt.get(...params);
   } catch (error) {
@@ -345,6 +369,7 @@ module.exports = {
   insert,
   update,
   deleteRow,
+  delete: deleteRow, // 兼容旧接口的别名
   find,
   findAll,
   count,

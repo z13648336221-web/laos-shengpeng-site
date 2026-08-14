@@ -116,7 +116,8 @@ class I18n {
   }
 }
 
-// Create and export instance
+// Create and expose instance
+// 注意：页面均以普通 <script> 加载本文件（无 type="module"），
+// 因此不能使用 ES Module 的 export 语法，需挂载到 window 供全局使用
 const i18n = new I18n();
-
-export default i18n;
+window.i18n = i18n;

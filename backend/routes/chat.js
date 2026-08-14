@@ -143,7 +143,7 @@ router.post('/user', async (req, res) => {
       visitorName: visitorName || '访客',
       sender: 'visitor',
       message: message.trim(),
-      isRead: false,
+      isRead: 0,
       createdAt: new Date().toISOString()
     };
     
@@ -160,7 +160,7 @@ router.post('/user', async (req, res) => {
           sender: 'admin',
           adminName: '智能客服',
           message: autoReply,
-          isRead: false,
+          isRead: 0,
           createdAt: new Date().toISOString()
         };
         await db.insert('chats', replyChat);
@@ -188,9 +188,9 @@ router.post('/admin/reply', authMiddleware, async (req, res) => {
       visitorId,
       visitorName: '客服',
       sender: 'admin',
-      adminName: req.user?.username || '管理员',
+      adminName: req.admin?.username || '管理员',
       message: message.trim(),
-      isRead: true,
+      isRead: 1,
       createdAt: new Date().toISOString()
     };
     

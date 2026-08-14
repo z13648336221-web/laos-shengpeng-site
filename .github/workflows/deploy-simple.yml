@@ -141,13 +141,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 300s
-          command_timeout: 60s
+          command_timeout: 120s
           script: |
             pkill -f "node.*server.js" || true
             cd /var/www/laos-logistics/backend
-            nohup node server.js > /dev/null 2>&1 &
-            sleep 3
+            nohup node server.js > server.log 2>&1 &
+            sleep 5
             echo "Node.js service restarted"
+            echo "Checking service status..."
+            if ps aux | grep "node.*server.js" | grep -v grep; then
+              echo "Service is running"
+            else
+              echo "Service failed to start"
+              echo "Server log:"
+              cat server.log
+              exit 1
+            fi
       
       - name: Verify deployment
         uses: appleboy/ssh-action@master

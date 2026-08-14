@@ -209,14 +209,22 @@ router.put('/:id', authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }
       return res.status(404).json({ success: false, message: msg.not_found });
     }
     
-    const updateData = {
-      title_zh, title_en, title_vi, content_zh, content_en, content_vi, 
-      summary_zh, summary_en, summary_vi, category
-    };
+    // 只更新请求中提供的字段（跳过 undefined），支持部分更新
+    const updateData = {};
+    const provided = { title_zh, title_en, title_vi, content_zh, content_en, content_vi, summary_zh, summary_en, summary_vi, category };
+    for (const [key, value] of Object.entries(provided)) {
+      if (value !== undefined) updateData[key] = value;
+    }
     
     if (image_url) updateData.image_url = image_url;
     if (video_url) updateData.video_url = video_url;
     if (publish_date) updateData.publish_date = publish_date;
+    
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: '没有需要更新的字段' });
+    }
+    
+    updateData.updated_at = new Date().toISOString();
     
     await db.update('news', { id: parseInt(req.params.id) }, updateData);
     

@@ -128,7 +128,8 @@ app.use((req, res, next) => {
 });
 
 const db = require('./models/database');
-const { hashPassword } = require('./middleware/auth');
+const crypto = require('crypto');
+const { hashPassword, comparePassword } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const inquiryRoutes = require('./routes/inquiry');
 const trackingRoutes = require('./routes/tracking');
@@ -284,15 +285,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+/**
+ * 初始化/升级管理员账户
+ * - 无任何管理员时：用 ADMIN_INITIAL_PASSWORD 环境变量或随机密码创建 admin
+ * - 已存在管理员但密码仍是默认值 [REDACTED] 且设置了 ADMIN_INITIAL_PASSWORD 时：自动升级密码
+ * - 不硬编码任何默认密码
+ */
 async function initDefaultAdmin() {
   const admins = await db.query('admins');
+  const defaultPassword = '[REDACTED]';
+  const envPassword = process.env.ADMIN_INITIAL_PASSWORD;
+
   if (admins.length === 0) {
+    const initialPassword = envPassword || crypto.randomBytes(12).toString('base64url');
     await db.insert('admins', {
       username: 'admin',
-      password: hashPassword('[REDACTED]'),
+      password: hashPassword(initialPassword),
       role: 'admin'
     });
-    console.log('默认管理员账户已创建：用户名 admin，密码 [REDACTED]');
+    console.log(`[Security] 默认管理员账户已创建：用户名 admin，初始密码：${initialPassword}（请立即登录后修改密码）`);
+    return;
+  }
+
+  // 检查是否有管理员仍在使用默认密码 [REDACTED]
+  for (const admin of admins) {
+    if (admin.password && comparePassword(defaultPassword, admin.password)) {
+      if (envPassword) {
+        await db.update('admins', { id: admin.id }, {
+          password: hashPassword(envPassword),
+          updated_at: new Date().toISOString()
+        });
+        console.log(`[Security] 管理员 ${admin.username} 已从默认密码升级为 ADMIN_INITIAL_PASSWORD 指定密码`);
+      } else {
+        console.warn(`[Security] 警告：管理员 ${admin.username} 仍在使用默认密码 [REDACTED]！请立即登录修改，或设置环境变量 ADMIN_INITIAL_PASSWORD 后重启自动升级。`);
+      }
+    }
   }
 }
 

@@ -10,6 +10,9 @@ backend/node_modules/
 backend/database/data.json
 backend/database/*.sqlite
 backend/database/*.db
+backend/database/*.db-shm
+backend/database/*.db-wal
+backend/database/*.db.gz
 backend/database/backups/
 
 # 上传文件
@@ -46,4 +49,5 @@ coverage/
 
 # 备份文件
 *.bak
-*.backupnode_modules/
+*.backup
+node_modules/

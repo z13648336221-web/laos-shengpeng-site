@@ -752,9 +752,7 @@ async function submitInquiry(event) {
       need_insurance: document.getElementById('needInsurance').value,
       contact_name: document.getElementById('contactName').value,
       contact_phone: document.getElementById('contactPhone').value,
-      remark: document.getElementById('remarks').value,
-      coupon_code: appliedCoupon ? appliedCoupon.code : '',
-      estimated_price: quote.price,
+      remark: document.getElementById('remarks').value
     };
 
     const response = await fetch(INQUIRY_API_URL, {

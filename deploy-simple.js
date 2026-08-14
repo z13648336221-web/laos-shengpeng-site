@@ -116,8 +116,24 @@ const conn = new Client();
 
 conn.on('ready', () => {
   console.log('✓ SSH连接成功\n');
-  console.log('开始上传文件...\n');
+  console.log('创建远程目录...\n');
   
+  // 先创建远程目录结构，避免首次部署 fastPut 失败
+  const mkdirCmd = 'mkdir -p /var/www/laos-logistics/public/css /var/www/laos-logistics/public/js /var/www/laos-logistics/public/lang /var/www/laos-logistics/public/services /var/www/laos-logistics/public/admin /var/www/laos-logistics/backend/database/backups /var/www/laos-logistics/backend/secure-uploads/news /var/www/laos-logistics/backend/secure-uploads/documents /var/www/laos-logistics/backend/secure-uploads/avatars /var/www/laos-logistics/backend/uploads/news';
+  conn.exec(mkdirCmd, (err, stream) => {
+    if (err) {
+      console.error('创建目录失败:', err.message);
+      conn.end();
+      return;
+    }
+    stream.on('close', () => {
+      console.log('✓ 远程目录创建完成\n');
+      console.log('开始上传文件...\n');
+      uploadAll();
+    }).on('data', (d) => process.stdout.write(d));
+  });
+  
+  function uploadAll() {
   conn.sftp((err, sftp) => {
     if (err) { 
       console.error('SFTP错误:', err.message); 
@@ -174,6 +190,7 @@ conn.on('ready', () => {
     
     uploadNext();
   });
+  }
 }).on('error', (err) => {
   console.error('SSH连接失败:', err.message);
   console.log('\n请检查:');

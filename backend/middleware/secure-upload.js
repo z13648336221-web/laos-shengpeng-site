@@ -179,7 +179,7 @@ function createSecureUpload(options = {}) {
   
   // 包装upload中间件，添加内容验证
   const secureUpload = {
-    single: async function (fieldName) {
+    single: function (fieldName) {
       return async (req, res, next) => {
         upload.single(fieldName)(req, res, async (err) => {
           if (err) return next(err);
@@ -220,7 +220,7 @@ function createSecureUpload(options = {}) {
       };
     },
     
-    fields: async function (fields) {
+    fields: function (fields) {
       return async (req, res, next) => {
         upload.fields(fields)(req, res, async (err) => {
           if (err) return next(err);
@@ -289,7 +289,7 @@ function createSecureUpload(options = {}) {
       };
     },
     
-    array: async function (fieldName, maxCount) {
+    array: function (fieldName, maxCount) {
       return async (req, res, next) => {
         upload.array(fieldName, maxCount)(req, res, async (err) => {
           if (err) return next(err);

@@ -41,32 +41,37 @@ function isLegacyHash(hashedPassword) {
 /**
  * 认证中间件
  */
-async function authMiddleware(req, res, next) {
+const authMiddleware = (req, res, next) => {
   const sessionId = req.cookies?.sessionId;
 
   if (!sessionId) {
     return res.status(401).json({ success: false, message: '未登录，请先登录' });
   }
 
-  const session = await db.get('sessions', { session_id: sessionId });
+  (async () => {
+    try {
+      const session = await db.get('sessions', { session_id: sessionId });
+      if (!session) {
+        return res.status(401).json({ success: false, message: '会话已过期，请重新登录' });
+      }
 
-  if (!session) {
-    return res.status(401).json({ success: false, message: '会话已过期，请重新登录' });
-  }
+      if (new Date(session.expires_at) < new Date()) {
+        await db.deleteRow('sessions', { session_id: sessionId });
+        return res.status(401).json({ success: false, message: '会话已过期，请重新登录' });
+      }
 
-  if (new Date(session.expires_at) < new Date()) {
-    await db.deleteRow('sessions', { session_id: sessionId });
-    return res.status(401).json({ success: false, message: '会话已过期，请重新登录' });
-  }
+      const admin = await db.get('admins', { id: session.admin_id });
+      if (!admin) {
+        return res.status(401).json({ success: false, message: '用户不存在' });
+      }
 
-  const admin = await db.get('admins', { id: session.admin_id });
-
-  if (!admin) {
-    return res.status(401).json({ success: false, message: '用户不存在' });
-  }
-
-  req.admin = admin;
-  next();
+      req.admin = admin;
+      next();
+    } catch (err) {
+      console.error('会话验证失败:', err);
+      return res.status(500).json({ success: false, message: '服务器错误' });
+    }
+  })();
 }
 
 /**

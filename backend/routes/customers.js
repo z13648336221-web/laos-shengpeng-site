@@ -254,10 +254,10 @@ router.post('/:id/contacts', authMiddleware, async (req, res) => {
       content: content || ''
     });
     
-    await db.update('customers', { id: parseInt(req.params.id) }, {
-      contact_count: db.literal('contact_count + 1'),
-      last_contact: new Date().toISOString()
-    });
+    await db.run(
+      'UPDATE customers SET contact_count = contact_count + 1 WHERE id = ?',
+      [parseInt(req.params.id)]
+    );
     
     res.json({ success: true, message: '联系记录添加成功' });
   } catch (err) {

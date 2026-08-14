@@ -39,13 +39,13 @@ const commonQueries = [
   },
   {
     name: '客户订单统计',
-    sql: 'SELECT c.*, COUNT(o.id) as order_count, SUM(o.price) as total_value FROM customers c LEFT JOIN orders o ON c.id = o.customer_id GROUP BY c.id',
+    sql: 'SELECT c.*, (SELECT COUNT(*) FROM orders o WHERE o.contact_phone = c.phone) as order_count FROM customers c',
     params: null,
     importance: 'medium'
   },
   {
     name: '新闻列表查询',
-    sql: 'SELECT * FROM news WHERE published = 1 ORDER BY created_at DESC LIMIT 10',
+    sql: 'SELECT * FROM news ORDER BY created_at DESC LIMIT 10',
     params: null,
     importance: 'medium'
   },
@@ -57,13 +57,13 @@ const commonQueries = [
   },
   {
     name: '聊天记录查询',
-    sql: 'SELECT * FROM chats WHERE visitor_id = ? ORDER BY created_at DESC LIMIT 50',
+    sql: 'SELECT * FROM chats WHERE visitorId = ? ORDER BY createdAt DESC LIMIT 50',
     params: ['visitor_test'],
     importance: 'low'
   },
   {
     name: '服务列表查询',
-    sql: 'SELECT * FROM services WHERE active = 1 ORDER BY sort_order',
+    sql: 'SELECT * FROM services ORDER BY priority',
     params: null,
     importance: 'low'
   }
@@ -175,12 +175,12 @@ function checkMissingIndexes(db) {
     const checks = [
       { table: 'admins', columns: ['username', 'status'], reason: '管理员登录查询' },
       { table: 'orders', columns: ['created_at'], reason: '订单列表按时间排序' },
-      { table: 'orders', columns: ['customer_id'], reason: '客户订单关联查询' },
+      { table: 'orders', columns: ['contact_phone'], reason: '客户订单关联查询' },
       { table: 'shipments', columns: ['tracking_number'], reason: '运单号查询' },
       { table: 'shipments', columns: ['status'], reason: '运单状态筛选' },
-      { table: 'news', columns: ['published', 'created_at'], reason: '新闻列表查询' },
+      { table: 'news', columns: ['category', 'created_at'], reason: '新闻列表查询' },
       { table: 'inquiries', columns: ['status', 'created_at'], reason: '询价统计查询' },
-      { table: 'chats', columns: ['visitor_id', 'created_at'], reason: '聊天记录查询' },
+      { table: 'chats', columns: ['visitorId', 'createdAt'], reason: '聊天记录查询' },
       { table: 'customers', columns: ['status'], reason: '客户状态筛选' }
     ];
     
