@@ -117,9 +117,9 @@ jobs:
           command_timeout: 180s
           script: |
             cd /var/www/laos-logistics/backend
-            npm install --production
+            npm install --omit=dev --no-audit --no-fund
       
-      - name: Create necessary directories
+      - name: Create necessary directories & fix permissions
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
@@ -132,8 +132,11 @@ jobs:
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/news
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/documents
             mkdir -p /var/www/laos-logistics/backend/secure-uploads/avatars
+            # 关键：运行目录必须属主 ubuntu（PM2 运行用户），否则写接口全部 500
+            chown -R ubuntu:ubuntu /var/www/laos-logistics/backend/database /var/www/laos-logistics/backend/uploads /var/www/laos-logistics/backend/secure-uploads
+            echo "Directories created and permissions fixed"
       
-      - name: Restart Node.js service
+      - name: Restart Node.js service (PM2)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
@@ -143,20 +146,11 @@ jobs:
           timeout: 300s
           command_timeout: 120s
           script: |
-            pkill -f "node.*server.js" || true
-            cd /var/www/laos-logistics/backend
-            nohup node server.js > server.log 2>&1 &
+            # 使用 PM2（用户 ubuntu）管理，避免 pkill+nohup 与守护进程冲突
+            su - ubuntu -c 'cd /var/www/laos-logistics/backend && (pm2 restart logistics-backend --update-env || pm2 start server.js --name logistics-backend)'
             sleep 5
-            echo "Node.js service restarted"
-            echo "Checking service status..."
-            if ps aux | grep "node.*server.js" | grep -v grep; then
-              echo "Service is running"
-            else
-              echo "Service failed to start"
-              echo "Server log:"
-              cat server.log
-              exit 1
-            fi
+            su - ubuntu -c 'pm2 list' | grep logistics-backend || (echo "PM2 restart failed" && exit 1)
+            echo "Node.js service restarted via PM2"
       
       - name: Verify deployment
         uses: appleboy/ssh-action@master
@@ -168,6 +162,7 @@ jobs:
           timeout: 300s
           command_timeout: 30s
           script: |
+            curl -f http://localhost:3001/api/health || exit 1
             curl -f http://localhost:3001/api/news || exit 1
             echo "Deployment verification successful"
       
