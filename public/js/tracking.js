@@ -110,11 +110,19 @@ async function trackShipment() {
 
 function getServiceLabel(serviceCode, lang) {
   const labels = {
+    // 数据库实际使用/后端子定义的服务编码
+    'rail': { zh: '🚂 中老铁路陆运', en: '🚂 Laos-China Railway', vi: '🚂 Đường sắt Trung-Lào' },
+    'road': { zh: '🚛 中老公路运输', en: '🚛 China-Laos Road', vi: '🚛 Đường bộ Trung-Lào' },
+    'thai': { zh: '🚢 泰国海运', en: '🚢 Thailand Sea Freight', vi: '🚢 Vận tải biển Thái Lan' },
+    'viet': { zh: '⚓ 越南海运', en: '⚓ Vietnam Sea Freight', vi: '⚓ Vận tải biển Việt Nam' },
+    'thai-rail': { zh: '🚂 中老泰铁路联运', en: '🚂 China-Laos-Thailand Rail', vi: '🚂 Liên vận Trung-Lào-Thái' },
+    'viet-rail': { zh: '🚂 中越铁路', en: '🚂 China-Vietnam Railway', vi: '🚂 Đường sắt Trung-Việt' },
+    // 兼容旧编码/后端 orders 体系
     'railway': { zh: '🚂 中老铁路陆运', en: '🚂 Laos-China Railway', vi: '🚂 Đường sắt Trung-Lào' },
-    'thailand-sea': { zh: '🚢 泰国海运', en: '🚢 Thailand Sea Freight', vi: '🚢 Vận chuyển biển Thái Lan' },
-    'thai_sea': { zh: '🚢 泰国海运', en: '🚢 Thailand Sea Freight', vi: '🚢 Vận chuyển biển Thái Lan' },
-    'vietnam-sea': { zh: '⚓ 越南海运', en: '⚓ Vietnam Sea Freight', vi: '⚓ Vận chuyển biển Việt Nam' },
-    'viet_sea': { zh: '⚓ 越南海运', en: '⚓ Vietnam Sea Freight', vi: '⚓ Vận chuyển biển Việt Nam' },
+    'thailand-sea': { zh: '🚢 泰国海运', en: '🚢 Thailand Sea Freight', vi: '🚢 Vận tải biển Thái Lan' },
+    'thai_sea': { zh: '🚢 泰国海运', en: '🚢 Thailand Sea Freight', vi: '🚢 Vận tải biển Thái Lan' },
+    'vietnam-sea': { zh: '⚓ 越南海运', en: '⚓ Vietnam Sea Freight', vi: '⚓ Vận tải biển Việt Nam' },
+    'viet_sea': { zh: '⚓ 越南海运', en: '⚓ Vietnam Sea Freight', vi: '⚓ Vận tải biển Việt Nam' },
   };
   return labels[serviceCode] ? labels[serviceCode][lang] || serviceCode : serviceCode;
 }
