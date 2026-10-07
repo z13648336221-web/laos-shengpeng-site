@@ -261,7 +261,7 @@
           document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-success">密码修改成功！</div>';
           setTimeout(closeChangePwdModal, 1500);
         } else {
-          document.getElementById('pwdAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+          document.getElementById('pwdAlert').innerHTML = `<div class="alert alert-error">${escapeHtml(result.message)}</div>`;
         }
       } catch (error) {
         document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-error">网络错误，请稍后重试</div>';
@@ -689,9 +689,9 @@
           <tbody>
             ${orders.map(order => `
               <tr>
-                <td><strong style="color: var(--primary-color);">${order.tracking_number || '-'}</strong></td>
-                <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${order.cargo_name || '-'}</td>
-                <td><span class="badge badge-${order.status}">${getStatusLabel(order.status)}</span></td>
+                <td><strong style="color: var(--primary-color);">${escapeHtml(order.tracking_number || '-')}</strong></td>
+                <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(order.cargo_name || '-')}</td>
+                <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(getStatusLabel(order.status))}</span></td>
                 <td>${order.created_at ? formatDateTime(order.created_at) : '-'}</td>
               </tr>
             `).join('')}
@@ -725,9 +725,9 @@
           <tbody>
             ${inquiries.map(item => `
               <tr>
-                <td>${item.contact_name}</td>
-                <td style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.cargo_name}</td>
-                <td><span class="badge badge-processing">${getTransportLabel(item.transport_type)}</span></td>
+                <td>${escapeHtml(item.contact_name)}</td>
+                <td style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.cargo_name)}</td>
+                <td><span class="badge badge-processing">${escapeHtml(getTransportLabel(item.transport_type))}</span></td>
                 <td>${item.created_at ? formatDate(item.created_at) : '-'}</td>
               </tr>
             `).join('')}
@@ -735,6 +735,16 @@
         </table>
       `;
       document.getElementById('pendingInquiries').innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
     }
 
     function getStatusLabel(status) {

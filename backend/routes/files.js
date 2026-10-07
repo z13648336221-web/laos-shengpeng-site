@@ -96,13 +96,28 @@ function getMimeType(filePath) {
 router.get('/:category/:filename', async (req, res) => {
   try {
     const { category, filename } = req.params;
-    
+
+    // news 为公开内容（官网新闻图片/视频）；documents/avatars 属用户文件，需登录访问
+    if (category !== 'news') {
+      return authMiddleware(req, res, () => {
+        serveFile(req, res, category, filename);
+      });
+    }
+    return serveFile(req, res, category, filename);
+  } catch (err) {
+    console.error('文件访问失败:', err);
+    res.status(500).json({ success: false, message: '服务器错误' });
+  }
+});
+
+async function serveFile(req, res, category, filename) {
+  try {
     // 验证分类是否合法
     const allowedCategories = ['news', 'documents', 'avatars'];
     if (!allowedCategories.includes(category)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: '无效的文件分类' 
+      return res.status(400).json({
+        success: false,
+        message: '无效的文件分类'
       });
     }
     
@@ -165,12 +180,12 @@ router.get('/:category/:filename', async (req, res) => {
     
   } catch (error) {
     console.error('文件访问错误:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '服务器内部错误' 
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
     });
   }
-});
+}
 
 /**
  * DELETE /files/:category/:filename

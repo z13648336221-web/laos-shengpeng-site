@@ -371,6 +371,16 @@
       });
     }
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     function renderStatusStats(orders) {
       const statusMap = {
         pending: { name: '待发运', count: 0 },
@@ -394,7 +404,7 @@
           const percentage = total > 0 ? Math.round((value.count / total) * 100) : 0;
           return `
             <tr>
-              <td><span class="badge badge-${key}">${value.name}</span></td>
+              <td><span class="badge badge-${escapeHtml(key)}">${value.name}</span></td>
               <td>${value.count}</td>
               <td>${percentage}%</td>
               <td>--</td>
