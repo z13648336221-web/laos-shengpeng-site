@@ -75,28 +75,41 @@ class I18n {
     });
   }
 
-  get(key) {
+  get(key, fallback) {
     const keys = key.split('.');
     let value = this.translations[this.currentLang];
-    
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        return key;
+        return fallback !== undefined ? fallback : key;
       }
     }
-    
-    return value || key;
+
+    if (value === undefined || value === null || value === '') {
+      return fallback !== undefined ? fallback : key;
+    }
+    return value;
   }
 
   updatePageContent() {
-    const elements = document.querySelectorAll('[data-i18n]');
-    
+    const elements = document.querySelectorAll('[data-i18n], [data-i18n-placeholder]');
+
     elements.forEach(el => {
+      // data-i18n-placeholder：仅设置输入框占位符，不替换元素文本
+      const placeholderKey = el.dataset.i18nPlaceholder;
+      if (placeholderKey) {
+        const translation = this.get(placeholderKey);
+        if (translation && translation !== placeholderKey) {
+          el.placeholder = translation;
+        }
+      }
+
       const key = el.dataset.i18n;
+      if (!key) return;
       const translation = this.get(key);
-      
+
       if (translation && translation !== key) {
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
           el.placeholder = translation;
@@ -111,8 +124,10 @@ class I18n {
     return this.currentLang;
   }
 
-  t(key) {
-    return this.get(key);
+  // t(key, fallback)：key 缺失时返回 fallback（原实现只接收一个参数，
+  // 导致调用方写的默认值全部失效、页面直接显示原始 key）
+  t(key, fallback) {
+    return this.get(key, fallback);
   }
 }
 
