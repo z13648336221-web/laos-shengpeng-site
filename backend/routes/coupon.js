@@ -53,6 +53,12 @@ router.post('/verify', (req, res) => {
       return res.json({ success: false, message: '请输入优惠码' });
     }
 
+    // 订单金额必传：否则满减门槛形同虚设，任何码都能通过
+    const amount = parseFloat(orderAmount);
+    if (orderAmount === undefined || orderAmount === null || orderAmount === '' || isNaN(amount) || amount < 0) {
+      return res.json({ success: false, message: '缺少有效的订单金额' });
+    }
+
     const coupon = coupons.find(c => c.code === code.toUpperCase());
     if (!coupon) {
       return res.json({ success: false, message: '优惠码无效' });
@@ -67,17 +73,11 @@ router.post('/verify', (req, res) => {
       return res.json({ success: false, message: '优惠码已过期' });
     }
 
-    if (orderAmount !== undefined && orderAmount !== null) {
-      const amount = parseFloat(orderAmount);
-      if (isNaN(amount)) {
-        return res.json({ success: false, message: '订单金额格式无效' });
-      }
-      if (amount < coupon.minAmount) {
-        return res.json({ 
-          success: false, 
-          message: `订单金额需满 ${coupon.minAmount} 元才能使用此优惠码` 
-        });
-      }
+    if (amount < coupon.minAmount) {
+      return res.json({
+        success: false,
+        message: `订单金额需满 ${coupon.minAmount} 元才能使用此优惠码`
+      });
     }
 
     res.json({

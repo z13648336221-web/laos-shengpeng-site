@@ -27,18 +27,22 @@ const SENSITIVE_WORDS = [
   '兼职', '日结', '在家工作', '刷单', '刷信誉',
   '减肥', '瘦身', '丰胸', '增大', '增高', '壮阳',
   '彩票', '中奖', '幸运', '大奖', '一等奖',
-  '微信', 'QQ', '加我', '私聊', '联系', '电话', '手机',
-  '客服', '咨询热线', '服务热线',
-  
+  // 注意：'微信'/'QQ'/'联系'/'电话'/'手机'/'客服'/'热线' 等常规业务词已被移除——
+  // 物流询价场景中客户留联系方式是正常诉求，拦截它们等于拒绝获客；
+  // 营销骚扰由访客端限流 + 管理员人工处理兜底
+
   // 色情词汇
-  '色情', '黄色', '成人', 'AV', '视频', '激情',
+  '色情', '黄色', '激情',
   '裸聊', '裸体', '裸照', '性感', '诱惑',
-  
+  // 注意：'成人'/'AV'/'视频' 已移除——'AV' 会命中一切含 av 的英文单词
+  // （have/available/travel...），'成人'/'视频' 会误伤成人用品/视频设备等正常货物
+
   // 垃圾信息特征
   '点击这里', '免费领取', '限时优惠', '错过不再有',
   '马上行动', '立即咨询', '马上联系', '速速联系',
-  'http://', 'https://', 'www.', '.com', '.cn', '.net',
-  
+  // 注意：URL 相关（http://、https://、www.、.com 等）已移除——
+  // 客户粘贴商品链接/物流链接是正常诉求
+
   // 恶意脚本
   '<script', 'javascript:', 'eval(', 'document.write', 'alert(',
   'onclick', 'onerror', 'onload', 'iframe', 'embed', 'object'
@@ -46,42 +50,52 @@ const SENSITIVE_WORDS = [
 
 /**
  * 垃圾信息特征模式
+ * 注意：手机号/座机/邮箱/QQ/微信号模式已被移除——物流询价的核心诉求
+ * 就是客户留下联系方式，把它们当垃圾拦截会直接丢客户
  */
 const SPAM_PATTERNS = [
   // 连续重复字符
   /(.)\1{4,}/g,
   // 过多的特殊字符
   /[^a-zA-Z0-9\u4e00-\u9fa5\s]{5,}/g,
-  // 电话号码模式
-  /\d{11}/g,
-  /\d{3,4}[-\s]?\d{7,8}/g,
-  // QQ号模式
-  /[Qq][Qq]?\s*[:：]?\s*\d{5,11}/g,
-  // 微信号模式
-  /[Ww][Xx]?\s*[:：]?\s*[a-zA-Z][a-zA-Z0-9_-]{5,19}/g,
-  // 邮箱模式
-  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+  // 刷链接（一条消息 3 个及以上 URL 才算骚扰）
+  /(https?:\/\/\S+[\s]*){3,}/g
 ];
 
 /**
+ * 还原入库时被转义的 HTML 实体，让模式匹配针对用户原始文本。
+ * 否则 sanitizeString 把 / 转成 &#x2F;（6 个连续特殊字符），
+ * 任何含 URL 或斜杠的消息都会被误判为"特殊字符过多"
+ */
+function decodeEntities(text) {
+  return text
+    .replace(/&#x2F;/gi, '/')
+    .replace(/&#x27;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&');
+}
+
+/**
  * 检查文本是否包含敏感词
- * @param {string} text - 待检查的文本
+ * @param {string} text - 待检查文本（已实体转义的入库文本亦可）
  * @returns {object} 检查结果
  */
 function checkSensitiveWords(text) {
   if (!text || typeof text !== 'string') {
     return { hasSensitive: false, words: [] };
   }
-  
+
   const foundWords = [];
-  const lowerText = text.toLowerCase();
-  
+  const lowerText = decodeEntities(text).toLowerCase();
+
   for (const word of SENSITIVE_WORDS) {
     if (lowerText.includes(word.toLowerCase())) {
       foundWords.push(word);
     }
   }
-  
+
   return {
     hasSensitive: foundWords.length > 0,
     words: foundWords,
@@ -91,18 +105,19 @@ function checkSensitiveWords(text) {
 
 /**
  * 检查文本是否为垃圾信息
- * @param {string} text - 待检查的文本
+ * @param {string} text - 待检查文本（已实体转义的入库文本亦可）
  * @returns {object} 检查结果
  */
 function checkSpamPatterns(text) {
   if (!text || typeof text !== 'string') {
     return { isSpam: false, patterns: [] };
   }
-  
+
+  const decoded = decodeEntities(text);
   const foundPatterns = [];
   
   for (const pattern of SPAM_PATTERNS) {
-    const matches = text.match(pattern);
+    const matches = decoded.match(pattern);
     if (matches && matches.length > 0) {
       foundPatterns.push({
         pattern: pattern.toString(),
