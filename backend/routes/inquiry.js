@@ -56,11 +56,14 @@ router.post('/', async (req, res) => {
       origin_city: Joi.string().required().messages({ 'any.required': msg.required }),
       dest_city: Joi.string().required().messages({ 'any.required': msg.required }),
       cargo_name: Joi.string().min(2).max(50).required().messages({ 'any.required': msg.required }),
-      weight: Joi.number().min(1).max(999999).required().messages({ 
+      weight: Joi.number().min(1).max(999999).required().messages({
         'any.required': msg.required,
-        'number.min': msg.invalid_weight 
+        'number.min': msg.invalid_weight
       }),
       volume: Joi.number().min(0).max(9999).optional(),
+      cargo_type: Joi.string().valid('general', 'electronic', 'food', 'textile', 'furniture', 'machinery', 'chemical', 'other', '').default(''),
+      load_type: Joi.string().valid('lcl', 'fcl20', 'fcl40', 'fcl40hq', 'truck96', 'truck13', 'truck1375', 'truck175', '').default(''),
+      ship_date: Joi.string().regex(/^\d{4}-\d{2}-\d{2}$/).allow('').default(''),
       need_customs: Joi.string().valid('yes', 'no').default('no'),
       need_insurance: Joi.string().valid('yes', 'no').default('no'),
       contact_name: Joi.string().min(2).max(20).required().messages({ 'any.required': msg.required }),
@@ -79,12 +82,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
 
-    const { transport_type, origin_city, dest_city, cargo_name, weight, volume, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark } = value;
+    const { transport_type, origin_city, dest_city, cargo_name, weight, volume, cargo_type, load_type, ship_date, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark } = value;
 
     const result = await db.run(`
-      INSERT INTO inquiries (transport_type, origin_city, dest_city, cargo_name, weight, volume, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [transport_type, origin_city, dest_city, cargo_name, weight, volume || 0, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark, 'pending']);
+      INSERT INTO inquiries (transport_type, origin_city, dest_city, cargo_name, weight, volume, cargo_type, load_type, ship_date, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [transport_type, origin_city, dest_city, cargo_name, weight, volume || 0, cargo_type, load_type, ship_date, need_customs, need_insurance, contact_name, contact_phone, contact_email, company_name, remark, 'pending']);
 
     res.status(201).json({
       success: true,

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>询价管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
+  <link rel="stylesheet" href="../css/admin.css?v=20261007a">
 </head>
 <body>
   <div class="sidebar">
@@ -315,6 +315,14 @@
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
 
+    function cargoTypeLabel(v) {
+      const m = { general: '普通货物', electronic: '电子产品', food: '食品/农产品', textile: '纺织品/服装', furniture: '家具家居', machinery: '机械设备', chemical: '化工品', other: '其他' };
+      return v && m[v] ? m[v] : (v || '-');
+    }
+    function loadTypeLabel(v) {
+      const m = { lcl: '拼箱（LCL）', fcl20: '整柜 20GP', fcl40: '整柜 40GP', fcl40hq: '整柜 40HQ', truck96: '9.6米高栏车', truck13: '13米高栏车', truck1375: '13.75米大板', truck175: '17.5米大板' };
+      return v && m[v] ? m[v] : (v || '-');
+    }
     async function viewDetail(id) {
       try {
         const response = await fetch(`${API_BASE}/inquiry/${id}`, { credentials: 'include' });
@@ -345,6 +353,9 @@
               <div style="font-weight: 600; margin-bottom: 12px;">📦 货物信息</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div><span style="color: var(--text-secondary);">货物名称:</span> ${escapeHtml(inquiry.cargo_name)}</div>
+                <div><span style="color: var(--text-secondary);">货物类型:</span> ${escapeHtml(cargoTypeLabel(inquiry.cargo_type))}</div>
+                <div><span style="color: var(--text-secondary);">装载方式:</span> ${escapeHtml(loadTypeLabel(inquiry.load_type))}</div>
+                <div><span style="color: var(--text-secondary);">期望发货:</span> ${escapeHtml(inquiry.ship_date || '-')}</div>
                 <div><span style="color: var(--text-secondary);">重量:</span> ${escapeHtml(inquiry.weight)} kg</div>
                 <div><span style="color: var(--text-secondary);">体积:</span> ${escapeHtml(inquiry.volume || 0)} cbm</div>
                 <div><span style="color: var(--text-secondary);">需要报关:</span> ${inquiry.need_customs === 'yes' ? '是' : '否'}</div>

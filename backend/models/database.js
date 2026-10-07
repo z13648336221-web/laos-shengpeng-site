@@ -7,7 +7,10 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = path.join(__dirname, '../database/shengpeng.db');
+// 优先使用 DB_PATH 环境变量（多环境/测试场景），默认为项目内数据库
+const dbPath = process.env.DB_PATH
+  ? path.resolve(process.env.DB_PATH)
+  : path.join(__dirname, '../database/shengpeng.db');
 const backupDir = path.join(__dirname, '../database/backups');
 
 // 确保备份目录存在
@@ -16,6 +19,33 @@ if (!fs.existsSync(backupDir)) {
 }
 
 let db = null;
+
+/**
+ * 幂等表结构迁移：为已存在的旧库补充新增列（新库由 schema.sql 直接建齐）
+ */
+function migrateSchema() {
+  const migrations = [
+    {
+      table: 'inquiries',
+      columns: [
+        { name: 'cargo_type', ddl: "ALTER TABLE inquiries ADD COLUMN cargo_type TEXT DEFAULT ''" },
+        { name: 'load_type', ddl: "ALTER TABLE inquiries ADD COLUMN load_type TEXT DEFAULT ''" },
+        { name: 'ship_date', ddl: "ALTER TABLE inquiries ADD COLUMN ship_date TEXT DEFAULT ''" }
+      ]
+    }
+  ];
+
+  for (const m of migrations) {
+    const existing = db.prepare(`PRAGMA table_info(${m.table})`).all().map(c => c.name);
+    if (existing.length === 0) continue; // 表不存在（新库由 schema.sql 创建）
+    for (const col of m.columns) {
+      if (!existing.includes(col.name)) {
+        db.prepare(col.ddl).run();
+        console.log(`✓ 迁移: ${m.table} 表新增列 ${col.name}`);
+      }
+    }
+  }
+}
 
 /**
  * 初始化数据库连接
@@ -37,11 +67,14 @@ function init() {
       
       // 启用外键约束
       db.pragma('foreign_keys = ON');
-      
+
       // 启用 WAL 模式以提高并发性能
       db.pragma('journal_mode = WAL');
-      
-      console.log('✓ SQLite 数据库连接成功');
+
+      // 幂等表结构迁移
+      migrateSchema();
+
+      console.log('✓ SQLite 数据库连接成功:', dbPath);
       resolve();
     } catch (error) {
       console.error('✗ 数据库连接失败:', error.message);

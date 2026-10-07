@@ -649,6 +649,16 @@ function displayQuote(quote) {
 // =============================================
 // 优惠券功能
 // =============================================
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 async function applyCoupon() {
   const codeInput = document.getElementById('couponCode');
   const code = codeInput ? codeInput.value.trim() : '';
@@ -658,17 +668,19 @@ async function applyCoupon() {
   if (btn) { btn.disabled = true; btn.textContent = '验证中...'; }
 
   try {
+    // 携带当前预估金额，让服务端校验满减门槛（金额为 0/未填重量时服务端会拒绝门槛券）
+    const quoteForAmount = calculateQuote();
     const resp = await fetch(COUPON_API_URL + '/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, orderAmount: quoteForAmount ? quoteForAmount.price : 0 }),
     });
     const result = await resp.json();
     if (result.success) {
       appliedCoupon = result.data;
       const statusEl = document.getElementById('couponStatus');
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#28a745;">✅ 优惠码已生效：${result.data.description}</span>`;
+        statusEl.innerHTML = `<span style="color:#28a745;">✅ 优惠码已生效：${escapeHtml(result.data.description)}</span>`;
       }
       // 重新计算报价（如果已有报价）
       if (document.getElementById('quoteResult').classList.contains('show')) {
@@ -679,32 +691,16 @@ async function applyCoupon() {
       appliedCoupon = null;
       const statusEl = document.getElementById('couponStatus');
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#e53935;">❌ ${result.message}</span>`;
+        statusEl.innerHTML = `<span style="color:#e53935;">❌ ${escapeHtml(result.message)}</span>`;
       }
     }
   } catch (e) {
     console.error('优惠券验证失败:', e);
-    // 离线模式：使用本地验证
-    const localCoupons = {
-      'HENGCI10': { code: 'HENGCI10', type: 'percent', value: 10, description: '9折优惠' },
-      'NEWCUSTOMER': { code: 'NEWCUSTOMER', type: 'fixed', value: 50, description: '立减50元' },
-      'VIP200': { code: 'VIP200', type: 'fixed', value: 200, description: '立减200元' },
-    };
-    if (localCoupons[code.toUpperCase()]) {
-      appliedCoupon = localCoupons[code.toUpperCase()];
-      const statusEl = document.getElementById('couponStatus');
-      if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#28a745;">✅ 优惠码已生效：${appliedCoupon.description}</span>`;
-      }
-      if (document.getElementById('quoteResult').classList.contains('show')) {
-        const quote = calculateQuote();
-        if (quote) displayQuote(quote);
-      }
-    } else {
-      const statusEl = document.getElementById('couponStatus');
-      if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#e53935;">❌ 优惠码无效</span>`;
-      }
+    // 网络异常：不使用本地硬编码券码兜底（优惠码以服务端为准，避免码已轮换后前端仍放行）
+    appliedCoupon = null;
+    const statusEl = document.getElementById('couponStatus');
+    if (statusEl) {
+      statusEl.innerHTML = `<span style="color:#e53935;">❌ 验证服务暂时不可用，请稍后重试</span>`;
     }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '使用'; }
@@ -747,12 +743,17 @@ async function submitInquiry(event) {
       origin_city: document.getElementById('originCity').value,
       dest_city: document.getElementById('destCity').value,
       cargo_name: document.getElementById('cargoName').value,
+      cargo_type: document.getElementById('cargoType')?.value || '',
       weight: parseFloat(document.getElementById('weight').value),
       volume: parseFloat(document.getElementById('volume').value) || 0,
+      load_type: document.getElementById('loadType')?.value || '',
+      ship_date: document.getElementById('shipDate')?.value || '',
       need_customs: document.getElementById('needCustoms').value,
       need_insurance: document.getElementById('needInsurance').value,
       contact_name: document.getElementById('contactName').value,
       contact_phone: document.getElementById('contactPhone').value,
+      contact_email: document.getElementById('contactEmail')?.value.trim() || '',
+      company_name: document.getElementById('companyName')?.value.trim() || '',
       remark: document.getElementById('remarks').value
     };
 
