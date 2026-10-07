@@ -19,8 +19,8 @@ Process exited with status 143 from signal TERM
 - name: Create remote directories
   uses: appleboy/ssh-action@master
   with:
-    host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
-    username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USER }}
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     timeout: 300s              # 连接超时

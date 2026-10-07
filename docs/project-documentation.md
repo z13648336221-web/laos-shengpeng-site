@@ -195,7 +195,7 @@ npm run dev    # 使用nodemon自动重启
 | 网站首页 | http://localhost:8000/index.html | 默认中文 |
 | 英文首页 | http://localhost:8000/index.html?lang=en | 英文模式 |
 | 越南语首页 | http://localhost:8000/index.html?lang=vi | 越南语模式 |
-| 后台登录 | http://localhost:8000/admin-login.html | 用户名:admin, 密码:[REDACTED] |
+| 后台登录 | http://localhost:8000/admin-login.html | 用户名:admin, 密码:[已泄漏并重置的默认口令] |
 | 仪表盘 | http://localhost:8000/admin-dashboard.html | 数据概览 |
 | 数据分析报表 | http://localhost:8000/admin-reports.html | 图表分析 |
 | 新闻管理 | http://localhost:8000/admin.html | 新闻CRUD |

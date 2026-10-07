@@ -26,8 +26,8 @@ tar: Cowardly refusing to create an empty archive
 - name: Create remote directories
   uses: appleboy/ssh-action@master
   with:
-    host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
-    username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USER }}
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     script: |
@@ -40,8 +40,8 @@ tar: Cowardly refusing to create an empty archive
 - name: Upload HTML files
   uses: appleboy/scp-action@master
   with:
-    host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
-    username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USER }}
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     source: "index.html,about.html,inquiry.html,tracking.html,news.html"
@@ -51,8 +51,8 @@ tar: Cowardly refusing to create an empty archive
 - name: Upload public directory
   uses: appleboy/scp-action@master
   with:
-    host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
-    username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USER }}
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     source: "public/"
@@ -62,8 +62,8 @@ tar: Cowardly refusing to create an empty archive
 - name: Upload backend directory
   uses: appleboy/scp-action@master
   with:
-    host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
-    username: ${{ secrets.SERVER_USER || 'REDACTED' }}
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USER }}
     key: ${{ secrets.SSH_PRIVATE_KEY }}
     port: ${{ secrets.SSH_PORT || '22' }}
     source: "backend/"

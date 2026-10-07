@@ -17,7 +17,7 @@
 host: ${{ secrets.SERVER_HOST }}
 
 # 修复后
-host: ${{ secrets.SERVER_HOST || 'SERVER_IP_REDACTED' }}
+host: ${{ secrets.SERVER_HOST }}
 ```
 
 ### 2. 配置默认值

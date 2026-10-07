@@ -112,7 +112,7 @@ node scripts/migrate-contract.js <路径>      # 指定其他数据库
 
 ### 安全类（建议尽快处理）
 
-1. **默认管理员 `admin/[REDACTED]`**（`backend/server.js` initDefaultAdmin）——生产环境必须立即修改密码，并考虑移除自动创建逻辑
+1. **默认管理员 `admin/[已泄漏并重置的默认口令]`**（`backend/server.js` initDefaultAdmin）——生产环境必须立即修改密码，并考虑移除自动创建逻辑
 2. **未鉴权写接口**：`POST /api/tracking`、`POST /api/tracking/:no/events`、`POST/PUT/DELETE /api/services` 无需登录即可操作，应加 `authMiddleware`
 3. **PII 泄露**：`GET /api/tracking` 列表接口未鉴权，返回所有运单的发/收件人姓名与电话
 4. **聊天历史可被任意读取**：`GET /api/chat/user/:visitorId` 无鉴权、不校验会话所有权

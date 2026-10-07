@@ -191,7 +191,7 @@ nohup node server.js > server.log 2>&1 &
 
 ### 1. 先手动调试
 ```bash
-ssh -i "C:\Users\Administrator\.ssh\id_ed25519_laos" USER@SERVER_IP_REDACTED
+ssh -i "~/.ssh/id_ed25519_laos" USER@SERVER_IP_REDACTED
 cd /var/www/laos-logistics/backend
 node server.js
 ```

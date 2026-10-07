@@ -51,12 +51,12 @@ function authMiddleware(req, res, next) {
 ### 1. 上传修复后的文件到服务器
 ```bash
 # 本地上传修复后的文件
-scp -i "C:\Users\Administrator\.ssh\id_ed25519_laos" backend/middleware/auth.js USER@SERVER_IP_REDACTED:/var/www/laos-logistics/backend/middleware/
+scp -i "~/.ssh/id_ed25519_laos" backend/middleware/auth.js USER@SERVER_IP_REDACTED:/var/www/laos-logistics/backend/middleware/
 ```
 
 ### 2. 在服务器上测试启动
 ```bash
-ssh -i "C:\Users\Administrator\.ssh\id_ed25519_laos" USER@SERVER_IP_REDACTED
+ssh -i "~/.ssh/id_ed25519_laos" USER@SERVER_IP_REDACTED
 cd /var/www/laos-logistics/backend
 node server.js
 ```
