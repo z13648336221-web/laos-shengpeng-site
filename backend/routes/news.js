@@ -259,7 +259,8 @@ const getCategoryLabel = (category, lang) => {
     company: { zh: '公司动态', en: 'Company News', vi: 'Tin tức công ty' },
     service: { zh: '服务资讯', en: 'Service News', vi: 'Tin tức dịch vụ' },
     policy: { zh: '政策解读', en: 'Policy News', vi: 'Giải thích chính sách' },
-    industry: { zh: '行业动态', en: 'Industry News', vi: 'Tin tức ngành' }
+    industry: { zh: '行业动态', en: 'Industry News', vi: 'Tin tức ngành' },
+    guide: { zh: '操作指南', en: 'Guide', vi: 'Hướng dẫn' }
   };
   return labels[category] ? labels[category][lang] || category : category;
 };

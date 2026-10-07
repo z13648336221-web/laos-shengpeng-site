@@ -1,12 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /public/admin/
-Disallow: /test-*.html
-Disallow: /TODO.html
-Disallow: /upload*.js
-Disallow: /server_deploy.js
-Disallow: /add-seo-tags.js
-Disallow: /cookies.txt
 
 # Sitemap
 Sitemap: https://hengciglobal.com/sitemap.xml

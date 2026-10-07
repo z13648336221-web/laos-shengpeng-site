@@ -330,3 +330,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadNews('all', 1);
   }, 500);
 });
+
+// 切换语言后刷新已渲染的新闻列表（否则列表保持旧语言，需手动刷新页面）
+document.addEventListener('languageChanged', function() {
+  const container = document.querySelector('.news-list') || document.querySelector('.news-grid');
+  if (container) {
+    loadNews(currentCategory, currentPage, false);
+  }
+});

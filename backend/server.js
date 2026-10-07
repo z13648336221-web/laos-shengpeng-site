@@ -188,7 +188,8 @@ app.use('/api/logs', logRoutes);
 app.use('/api/coupon', couponRoutes);
 app.use('/api/files', filesRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// 旧版 /uploads 静态路由已移除：数据库中无任何 /uploads 引用，
+// 现行上传全部存于 web 根之外的 secure-uploads/ 并经 /api/files 访问
 
 app.get('/api/languages', (req, res) => {
   res.json({
