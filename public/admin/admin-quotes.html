@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>报价管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
 </head>
 <body>
   <div class="sidebar">
@@ -198,6 +198,16 @@
     let editingId = null;
     let quoteDataCache = [];
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
@@ -299,16 +309,16 @@
           <tbody>
             ${quotes.map(quote => `
               <tr>
-                <td><strong style="color: var(--primary-color);">${quote.name}</strong></td>
-                <td>${quote.service_label}</td>
-                <td>${quote.origin_city ? getCityLabel(quote.origin_city) : '不限'} → ${quote.dest_city ? getCityLabel(quote.dest_city) : '不限'}</td>
-                <td>¥${quote.base_price}/${quote.price_unit}</td>
-                <td>${quote.transit_days || '-'}</td>
-                <td>${quote.valid_days}天</td>
-                <td><span class="badge badge-${quote.status}">${quote.status === 'active' ? '启用' : '停用'}</span></td>
+                <td><strong style="color: var(--primary-color);">${escapeHtml(quote.name)}</strong></td>
+                <td>${escapeHtml(quote.service_label)}</td>
+                <td>${quote.origin_city ? escapeHtml(getCityLabel(quote.origin_city)) : '不限'} → ${quote.dest_city ? escapeHtml(getCityLabel(quote.dest_city)) : '不限'}</td>
+                <td>¥${escapeHtml(quote.base_price)}/${escapeHtml(quote.price_unit)}</td>
+                <td>${escapeHtml(quote.transit_days || '-')}</td>
+                <td>${escapeHtml(quote.valid_days)}天</td>
+                <td><span class="badge badge-${escapeHtml(quote.status)}">${quote.status === 'active' ? '启用' : '停用'}</span></td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" onclick="editQuote(${quote.id})">编辑</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteQuote(${quote.id})">删除</button>
+                  <button class="btn btn-secondary btn-sm" onclick="editQuote(${escapeHtml(quote.id)})">编辑</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteQuote(${escapeHtml(quote.id)})">删除</button>
                 </td>
               </tr>
             `).join('')}
@@ -426,7 +436,7 @@
 
     function showAlert(message, type) {
       const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${escapeHtml(message)}</div>`;
     }
 
     async function deleteQuote(id) {
@@ -494,13 +504,13 @@
           <tbody>
             ${history.map(item => `
               <tr>
-                <td>SQ${item.id}</td>
-                <td>${getTransportLabel(item.transport_type)}</td>
-                <td>${getCityLabel2(item.origin_city)} → ${getCityLabel2(item.dest_city)}</td>
-                <td>${item.cargo_weight}kg${item.cargo_volume ? ` / ${item.cargo_volume}cbm` : ''}</td>
-                <td style="color: var(--primary-color); font-weight: 500;">¥${item.unit_price}</td>
-                <td>${item.estimated_days}天</td>
-                <td>${item.contact_name} (${item.contact_phone})</td>
+                <td>SQ${escapeHtml(item.id)}</td>
+                <td>${escapeHtml(getTransportLabel(item.transport_type))}</td>
+                <td>${escapeHtml(getCityLabel2(item.origin_city))} → ${escapeHtml(getCityLabel2(item.dest_city))}</td>
+                <td>${escapeHtml(item.cargo_weight)}kg${item.cargo_volume ? ` / ${escapeHtml(item.cargo_volume)}cbm` : ''}</td>
+                <td style="color: var(--primary-color); font-weight: 500;">¥${escapeHtml(item.unit_price)}</td>
+                <td>${escapeHtml(item.estimated_days)}天</td>
+                <td>${escapeHtml(item.contact_name)} (${escapeHtml(item.contact_phone)})</td>
                 <td>${formatDate(item.created_at)}</td>
               </tr>
             `).join('')}

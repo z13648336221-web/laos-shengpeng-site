@@ -161,7 +161,7 @@ class ChatWidget {
 
   async loadMessages() {
     try {
-      const response = await fetch(`${API_BASE}/chat/user/${this.visitorId}`);
+      const response = await fetch(`${API_BASE}/chat/user/${encodeURIComponent(this.visitorId)}`);
       const result = await response.json();
       
       if (result.success && result.data.length > 0) {
@@ -193,7 +193,7 @@ class ChatWidget {
     });
     
     messageEl.innerHTML = `
-      <div class="message-bubble">${this.escapeHtml(msg.message)}</div>
+      <div class="message-bubble">${this.escapeHtml(this.htmlDecode(msg.message))}</div>
       <div class="message-time">${time}</div>
     `;
     
@@ -261,7 +261,7 @@ class ChatWidget {
 
   async checkNewMessages() {
     try {
-      const response = await fetch(`${API_BASE}/chat/user/${this.visitorId}`);
+      const response = await fetch(`${API_BASE}/chat/user/${encodeURIComponent(this.visitorId)}`);
       const result = await response.json();
       
       if (result.success && result.data.length > 0) {
@@ -304,6 +304,15 @@ class ChatWidget {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // 数据库中的消息已在后端做过 HTML 实体转义（如 I&#x27;m），
+  // 直接再转义会双重转义（显示 I&amp;#x27;m）。
+  // 先解码还原为原始文本、再统一转义渲染，同时兼容清洗上线前的存量数据。
+  htmlDecode(text) {
+    const t = document.createElement('textarea');
+    t.innerHTML = text == null ? '' : String(text);
+    return t.value;
   }
 }
 

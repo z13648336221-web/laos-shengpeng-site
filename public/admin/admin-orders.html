@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>订单管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
 </head>
 <body>
   <div class="sidebar">
@@ -283,6 +283,16 @@
     let statusUpdateOrderId = null;
     let orderDataCache = [];
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
@@ -401,17 +411,17 @@
           <tbody>
             ${orders.map(order => `
               <tr>
-                <td><input type="checkbox" class="order-checkbox" data-id="${order.id}" onchange="toggleSelect(${order.id})"></td>
-                <td><strong style="color: var(--primary-color);">${order.tracking_number}</strong></td>
-                <td style="max-width: 150px;">${order.cargo_name || '-'}<br/>${order.weight} KG</td>
-                <td>${getCityLabel(order.origin_city)} → ${getCityLabel(order.dest_city)}</td>
-                <td><span class="badge badge-${order.status}">${getStatusLabel(order.status)}</span></td>
+                <td><input type="checkbox" class="order-checkbox" data-id="${escapeHtml(order.id)}" onchange="toggleSelect(${escapeHtml(order.id)})"></td>
+                <td><strong style="color: var(--primary-color);">${escapeHtml(order.tracking_number)}</strong></td>
+                <td style="max-width: 150px;">${escapeHtml(order.cargo_name || '-')}<br/>${escapeHtml(order.weight)} KG</td>
+                <td>${escapeHtml(getCityLabel(order.origin_city))} → ${escapeHtml(getCityLabel(order.dest_city))}</td>
+                <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(getStatusLabel(order.status))}</span></td>
                 <td>${order.estimated_delivery ? formatDate(order.estimated_delivery) : '-'}</td>
-                <td>${order.contact_name || '-'}<br/>${order.contact_phone || '-'}</td>
+                <td>${escapeHtml(order.contact_name || '-')}<br/>${escapeHtml(order.contact_phone || '-')}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" onclick="viewOrder(${order.id})">详情</button>
-                  <button class="btn btn-primary btn-sm" onclick="updateOrderStatus(${order.id})">更新状态</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteOrder(${order.id})">删除</button>
+                  <button class="btn btn-secondary btn-sm" onclick="viewOrder(${escapeHtml(order.id)})">详情</button>
+                  <button class="btn btn-primary btn-sm" onclick="updateOrderStatus(${escapeHtml(order.id)})">更新状态</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteOrder(${escapeHtml(order.id)})">删除</button>
                 </td>
               </tr>
             `).join('')}
@@ -559,8 +569,8 @@
             <div style="margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                  <h3 style="color: var(--primary-color); font-size: 18px;">运单号: ${order.tracking_number}</h3>
-                  <span class="badge badge-${order.status}" style="margin-top: 8px; display: inline-block;">${getStatusLabel(order.status)}</span>
+                  <h3 style="color: var(--primary-color); font-size: 18px;">运单号: ${escapeHtml(order.tracking_number)}</h3>
+                  <span class="badge badge-${escapeHtml(order.status)}" style="margin-top: 8px; display: inline-block;">${escapeHtml(getStatusLabel(order.status))}</span>
                 </div>
                 <div style="text-align: right;">
                   <div style="color: var(--text-secondary); font-size: 12px;">创建时间</div>
@@ -572,17 +582,17 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
               <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
                 <div style="font-weight: 600; margin-bottom: 12px;">📦 货物信息</div>
-                <div>品名: ${order.cargo_name || '-'}</div>
-                <div>类型: ${getCargoTypeLabel(order.cargo_type)}</div>
-                <div>重量: ${order.weight} KG</div>
-                <div>体积: ${order.volume || 0} CBM</div>
-                <div>装载: ${getLoadTypeLabel(order.load_type)}</div>
+                <div>品名: ${escapeHtml(order.cargo_name || '-')}</div>
+                <div>类型: ${escapeHtml(getCargoTypeLabel(order.cargo_type))}</div>
+                <div>重量: ${escapeHtml(order.weight)} KG</div>
+                <div>体积: ${escapeHtml(order.volume || 0)} CBM</div>
+                <div>装载: ${escapeHtml(getLoadTypeLabel(order.load_type))}</div>
               </div>
               <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
                 <div style="font-weight: 600; margin-bottom: 12px;">🚚 运输路线</div>
-                <div>运输方式: ${order.service_label}</div>
-                <div>起运地: ${order.origin_label}</div>
-                <div>目的地: ${order.dest_label}</div>
+                <div>运输方式: ${escapeHtml(order.service_label)}</div>
+                <div>起运地: ${escapeHtml(order.origin_label)}</div>
+                <div>目的地: ${escapeHtml(order.dest_label)}</div>
                 <div>预计到达: ${formatDate(order.estimated_delivery)}</div>
                 <div>实际到达: ${order.actual_delivery ? formatDate(order.actual_delivery) : '-'}</div>
               </div>
@@ -591,14 +601,14 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
               <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
                 <div style="font-weight: 600; margin-bottom: 12px;">📤 发货人</div>
-                <div>姓名: ${order.sender_name || '-'}</div>
-                <div>电话: ${order.sender_phone || '-'}</div>
+                <div>姓名: ${escapeHtml(order.sender_name || '-')}</div>
+                <div>电话: ${escapeHtml(order.sender_phone || '-')}</div>
               </div>
               <div style="background: #f8f9fa; padding: 16px; border-radius: 6px;">
                 <div style="font-weight: 600; margin-bottom: 12px;">📥 收货人</div>
-                <div>姓名: ${order.receiver_name || '-'}</div>
-                <div>电话: ${order.receiver_phone || '-'}</div>
-                <div style="margin-top: 8px;">地址: ${order.receiver_address || '-'}</div>
+                <div>姓名: ${escapeHtml(order.receiver_name || '-')}</div>
+                <div>电话: ${escapeHtml(order.receiver_phone || '-')}</div>
+                <div style="margin-top: 8px;">地址: ${escapeHtml(order.receiver_address || '-')}</div>
               </div>
             </div>
 
@@ -608,8 +618,8 @@
                 ${order.timeline && order.timeline.length > 0 ? order.timeline.map((item, idx) => `
                   <div style="padding: 8px 0; border-bottom: 1px solid #eee; ${idx === 0 ? 'font-weight: 600;' : ''}">
                     <div style="color: var(--text-secondary); font-size: 12px;">${formatDateTime(item.time)}</div>
-                    <div>${item.status_label || item.description}</div>
-                    ${item.location ? `<div style="color: var(--text-secondary); font-size: 12px;">📍 ${item.location}</div>` : ''}
+                    <div>${escapeHtml(item.status_label || item.description)}</div>
+                    ${item.location ? `<div style="color: var(--text-secondary); font-size: 12px;">📍 ${escapeHtml(item.location)}</div>` : ''}
                   </div>
                 `).join('') : '<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无轨迹信息</div>'}
               </div>
@@ -617,7 +627,7 @@
 
             ${order.remarks ? `<div style="background: #fff3cd; padding: 12px; border-radius: 6px;">
               <div style="font-weight: 600; color: #856404; margin-bottom: 4px;">备注</div>
-              <div>${order.remarks}</div>
+              <div>${escapeHtml(order.remarks)}</div>
             </div>` : ''}
           `;
           document.getElementById('detailModal').classList.add('show');
@@ -785,7 +795,7 @@
 
     function showAlert(message, type) {
       const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${escapeHtml(message)}</div>`;
     }
 
     function handleSearch() {

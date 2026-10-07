@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>询价管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
 </head>
 <body>
   <div class="sidebar">
@@ -184,6 +184,16 @@
     const API_BASE = '/api';
     let currentInquiryId = null;
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
@@ -260,17 +270,17 @@
           <tbody>
             ${list.map(item => `
               <tr>
-                <td>#${item.id}</td>
-                <td>${item.contact_name}</td>
-                <td>${item.contact_phone}</td>
-                <td>${item.cargo_name} (${item.weight}kg)</td>
-                <td>${getTransportLabel(item.transport_type)}</td>
-                <td><span class="badge badge-${item.status}">${getStatusLabel(item.status)}</span></td>
+                <td>#${escapeHtml(item.id)}</td>
+                <td>${escapeHtml(item.contact_name)}</td>
+                <td>${escapeHtml(item.contact_phone)}</td>
+                <td>${escapeHtml(item.cargo_name)} (${escapeHtml(item.weight)}kg)</td>
+                <td>${escapeHtml(getTransportLabel(item.transport_type))}</td>
+                <td><span class="badge badge-${escapeHtml(item.status)}">${escapeHtml(getStatusLabel(item.status))}</span></td>
                 <td>${formatDate(item.created_at)}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" onclick="viewDetail(${item.id})">详情</button>
-                  <button class="btn btn-primary btn-sm" onclick="openStatusModal(${item.id}, '${item.status}')">状态</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${item.id})">删除</button>
+                  <button class="btn btn-secondary btn-sm" onclick="viewDetail(${escapeHtml(item.id)})">详情</button>
+                  <button class="btn btn-primary btn-sm" onclick="openStatusModal(${escapeHtml(item.id)}, '${escapeHtml(item.status)}')">状态</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteInquiry(${escapeHtml(item.id)})">删除</button>
                 </td>
               </tr>
             `).join('')}
@@ -317,8 +327,8 @@
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
               <div style="font-weight: 600; margin-bottom: 12px;">📋 基本信息</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div><span style="color: var(--text-secondary);">运输类型:</span> ${getTransportLabel(inquiry.transport_type)}</div>
-                <div><span style="color: var(--text-secondary);">状态:</span> <span class="badge badge-${inquiry.status}">${getStatusLabel(inquiry.status)}</span></div>
+                <div><span style="color: var(--text-secondary);">运输类型:</span> ${escapeHtml(getTransportLabel(inquiry.transport_type))}</div>
+                <div><span style="color: var(--text-secondary);">状态:</span> <span class="badge badge-${escapeHtml(inquiry.status)}">${escapeHtml(getStatusLabel(inquiry.status))}</span></div>
                 <div><span style="color: var(--text-secondary);">创建时间:</span> ${formatDate(inquiry.created_at)}</div>
               </div>
             </div>
@@ -326,17 +336,17 @@
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
               <div style="font-weight: 600; margin-bottom: 12px;">📍 运输信息</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div><span style="color: var(--text-secondary);">起运地:</span> ${getCityLabel(inquiry.origin_city)}</div>
-                <div><span style="color: var(--text-secondary);">目的地:</span> ${getCityLabel(inquiry.dest_city)}</div>
+                <div><span style="color: var(--text-secondary);">起运地:</span> ${escapeHtml(getCityLabel(inquiry.origin_city))}</div>
+                <div><span style="color: var(--text-secondary);">目的地:</span> ${escapeHtml(getCityLabel(inquiry.dest_city))}</div>
               </div>
             </div>
             
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
               <div style="font-weight: 600; margin-bottom: 12px;">📦 货物信息</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div><span style="color: var(--text-secondary);">货物名称:</span> ${inquiry.cargo_name}</div>
-                <div><span style="color: var(--text-secondary);">重量:</span> ${inquiry.weight} kg</div>
-                <div><span style="color: var(--text-secondary);">体积:</span> ${inquiry.volume || 0} cbm</div>
+                <div><span style="color: var(--text-secondary);">货物名称:</span> ${escapeHtml(inquiry.cargo_name)}</div>
+                <div><span style="color: var(--text-secondary);">重量:</span> ${escapeHtml(inquiry.weight)} kg</div>
+                <div><span style="color: var(--text-secondary);">体积:</span> ${escapeHtml(inquiry.volume || 0)} cbm</div>
                 <div><span style="color: var(--text-secondary);">需要报关:</span> ${inquiry.need_customs === 'yes' ? '是' : '否'}</div>
                 <div><span style="color: var(--text-secondary);">需要保险:</span> ${inquiry.need_insurance === 'yes' ? '是' : '否'}</div>
               </div>
@@ -345,17 +355,17 @@
             <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
               <div style="font-weight: 600; margin-bottom: 12px;">👤 联系人信息</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div><span style="color: var(--text-secondary);">姓名:</span> ${inquiry.contact_name}</div>
-                <div><span style="color: var(--text-secondary);">电话:</span> ${inquiry.contact_phone}</div>
-                <div><span style="color: var(--text-secondary);">邮箱:</span> ${inquiry.contact_email || '-'}</div>
-                <div><span style="color: var(--text-secondary);">公司:</span> ${inquiry.company_name || '-'}</div>
+                <div><span style="color: var(--text-secondary);">姓名:</span> ${escapeHtml(inquiry.contact_name)}</div>
+                <div><span style="color: var(--text-secondary);">电话:</span> ${escapeHtml(inquiry.contact_phone)}</div>
+                <div><span style="color: var(--text-secondary);">邮箱:</span> ${escapeHtml(inquiry.contact_email || '-')}</div>
+                <div><span style="color: var(--text-secondary);">公司:</span> ${escapeHtml(inquiry.company_name || '-')}</div>
               </div>
             </div>
             
             ${inquiry.remark ? `
             <div style="background: #fff3cd; padding: 12px; border-radius: 8px;">
               <div style="font-weight: 600; color: #856404; margin-bottom: 4px;">备注</div>
-              <div>${inquiry.remark}</div>
+              <div>${escapeHtml(inquiry.remark)}</div>
             </div>
             ` : ''}
           `;
@@ -414,7 +424,7 @@
             loadInquiries();
           }, 1000);
         } else {
-          document.getElementById('statusAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+          document.getElementById('statusAlert').innerHTML = `<div class="alert alert-error">${escapeHtml(result.message)}</div>`;
         }
       } catch (error) {
         document.getElementById('statusAlert').innerHTML = '<div class="alert alert-error">更新失败</div>';
@@ -481,13 +491,13 @@
       if (amount && days) {
         const previewHtml = `
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div><span style="color: var(--text-secondary);">运输类型:</span> ${getTransportLabel(currentQuoteInquiry.transport_type)}</div>
-            <div><span style="color: var(--text-secondary);">路线:</span> ${getCityLabel(currentQuoteInquiry.origin_city)} → ${getCityLabel(currentQuoteInquiry.dest_city)}</div>
-            <div><span style="color: var(--text-secondary);">货物:</span> ${currentQuoteInquiry.cargo_name} (${currentQuoteInquiry.weight}kg)</div>
-            <div><span style="color: var(--text-secondary);">预计时效:</span> ${days} 天</div>
-            <div><span style="color: var(--text-secondary);">报价金额:</span> <span style="color: var(--primary-color); font-weight: 600;">¥ ${amount}</span></div>
+            <div><span style="color: var(--text-secondary);">运输类型:</span> ${escapeHtml(getTransportLabel(currentQuoteInquiry.transport_type))}</div>
+            <div><span style="color: var(--text-secondary);">路线:</span> ${escapeHtml(getCityLabel(currentQuoteInquiry.origin_city))} → ${escapeHtml(getCityLabel(currentQuoteInquiry.dest_city))}</div>
+            <div><span style="color: var(--text-secondary);">货物:</span> ${escapeHtml(currentQuoteInquiry.cargo_name)} (${escapeHtml(currentQuoteInquiry.weight)}kg)</div>
+            <div><span style="color: var(--text-secondary);">预计时效:</span> ${escapeHtml(days)} 天</div>
+            <div><span style="color: var(--text-secondary);">报价金额:</span> <span style="color: var(--primary-color); font-weight: 600;">¥ ${escapeHtml(amount)}</span></div>
           </div>
-          ${remark ? `<div style="margin-top: 8px; color: var(--text-secondary);">备注: ${remark}</div>` : ''}
+          ${remark ? `<div style="margin-top: 8px; color: var(--text-secondary);">备注: ${escapeHtml(remark)}</div>` : ''}
         `;
         document.getElementById('quotePreviewContent').innerHTML = previewHtml;
         document.getElementById('quotePreview').style.display = 'block';
@@ -549,7 +559,7 @@
             loadInquiries();
           }, 1500);
         } else {
-          document.getElementById('quoteAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+          document.getElementById('quoteAlert').innerHTML = `<div class="alert alert-error">${escapeHtml(result.message)}</div>`;
         }
       } catch (error) {
         document.getElementById('quoteAlert').innerHTML = '<div class="alert alert-error">保存失败</div>';
@@ -580,30 +590,30 @@
         </div>
         
         <div class="quote-info">
-          <div class="quote-row"><span class="quote-label">运输类型</span><span class="quote-value">${getTransportLabel(currentQuoteInquiry.transport_type)}</span></div>
-          <div class="quote-row"><span class="quote-label">起运地</span><span class="quote-value">${getCityLabel(currentQuoteInquiry.origin_city)}</span></div>
-          <div class="quote-row"><span class="quote-label">目的地</span><span class="quote-value">${getCityLabel(currentQuoteInquiry.dest_city)}</span></div>
+          <div class="quote-row"><span class="quote-label">运输类型</span><span class="quote-value">${escapeHtml(getTransportLabel(currentQuoteInquiry.transport_type))}</span></div>
+          <div class="quote-row"><span class="quote-label">起运地</span><span class="quote-value">${escapeHtml(getCityLabel(currentQuoteInquiry.origin_city))}</span></div>
+          <div class="quote-row"><span class="quote-label">目的地</span><span class="quote-value">${escapeHtml(getCityLabel(currentQuoteInquiry.dest_city))}</span></div>
         </div>
         
         <div class="quote-info">
-          <div class="quote-row"><span class="quote-label">货物名称</span><span class="quote-value">${currentQuoteInquiry.cargo_name}</span></div>
-          <div class="quote-row"><span class="quote-label">重量</span><span class="quote-value">${currentQuoteInquiry.weight} kg</span></div>
-          <div class="quote-row"><span class="quote-label">体积</span><span class="quote-value">${currentQuoteInquiry.volume || 0} cbm</span></div>
-          <div class="quote-row"><span class="quote-label">预计时效</span><span class="quote-value">${days} 天</span></div>
+          <div class="quote-row"><span class="quote-label">货物名称</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.cargo_name)}</span></div>
+          <div class="quote-row"><span class="quote-label">重量</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.weight)} kg</span></div>
+          <div class="quote-row"><span class="quote-label">体积</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.volume || 0)} cbm</span></div>
+          <div class="quote-row"><span class="quote-label">预计时效</span><span class="quote-value">${escapeHtml(days)} 天</span></div>
         </div>
         
         <div class="quote-info">
-          <div class="quote-row"><span class="quote-label">联系人</span><span class="quote-value">${currentQuoteInquiry.contact_name}</span></div>
-          <div class="quote-row"><span class="quote-label">联系电话</span><span class="quote-value">${currentQuoteInquiry.contact_phone}</span></div>
-          <div class="quote-row"><span class="quote-label">邮箱</span><span class="quote-value">${currentQuoteInquiry.contact_email || '-'}</span></div>
+          <div class="quote-row"><span class="quote-label">联系人</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.contact_name)}</span></div>
+          <div class="quote-row"><span class="quote-label">联系电话</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.contact_phone)}</span></div>
+          <div class="quote-row"><span class="quote-label">邮箱</span><span class="quote-value">${escapeHtml(currentQuoteInquiry.contact_email || '-')}</span></div>
         </div>
         
-        <div class="quote-total">报价金额：¥ ${amount}</div>
+        <div class="quote-total">报价金额：¥ ${escapeHtml(amount)}</div>
         
-        ${remark ? `<div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">备注：${remark}</div>` : ''}
+        ${remark ? `<div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px;">备注：${escapeHtml(remark)}</div>` : ''}
         
         <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd;">
-          <div style="font-size: 14px; color: #666;">重庆恒慈国际贸易有限公司有限公司</div>
+          <div style="font-size: 14px; color: #666;">重庆恒慈国际贸易有限公司</div>
           <div style="font-size: 12px; color: #999; margin-top: 4px;">电话：13648336221 | 邮箱：z13648336221@gmail.com | 地址：重庆市南岸区</div>
         </div>
       `;
@@ -647,7 +657,7 @@
           document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-success">密码修改成功！</div>';
           setTimeout(closeChangePwdModal, 1500);
         } else {
-          document.getElementById('pwdAlert').innerHTML = `<div class="alert alert-error">${result.message}</div>`;
+          document.getElementById('pwdAlert').innerHTML = `<div class="alert alert-error">${escapeHtml(result.message)}</div>`;
         }
       } catch (error) {
         document.getElementById('pwdAlert').innerHTML = '<div class="alert alert-error">网络错误</div>';

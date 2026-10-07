@@ -1,3 +1,11 @@
+function escapeHtmlText(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function showNotification(type, message) {
   const icons = {
     success: '✓',
@@ -10,7 +18,7 @@ function showNotification(type, message) {
   notification.className = `notification notification-${type}`;
   notification.innerHTML = `
     <span class="notification-icon">${icons[type]}</span>
-    <span class="notification-content">${message}</span>
+    <span class="notification-content">${escapeHtmlText(message)}</span>
     <button class="notification-close" onclick="this.parentElement.remove()">×</button>
   `;
 
@@ -52,8 +60,9 @@ function validateField(field, rules) {
     error = '请输入有效的邮箱地址';
   }
 
-  if (rules.phone && value && !/^1[3-9]\d{9}$/.test(value)) {
-    error = '请输入有效的手机号码';
+  // 支持国际号码（+国家码，8-15位数字），与后端 Joi 校验保持一致
+  if (rules.phone && value && !/^\+?[0-9]{8,15}$/.test(value)) {
+    error = '请输入有效的电话号码';
   }
 
   if (rules.minLength && value && value.length < rules.minLength) {

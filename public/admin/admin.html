@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>新闻管理后台 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
 </head>
 <body>
   <div class="sidebar">
@@ -143,6 +143,16 @@
     let currentLang = 'zh';
     let editingId = null;
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
@@ -203,12 +213,12 @@
           <tbody>
             ${newsList.map(item => `
               <tr>
-                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</td>
-                <td><span class="badge badge-${item.category}">${getCategoryLabel(item.category)}</span></td>
+                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.title)}</td>
+                <td><span class="badge badge-${escapeHtml(item.category)}">${escapeHtml(getCategoryLabel(item.category))}</span></td>
                 <td>${formatDate(item.publish_date || item.created_at)}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" style="margin-right: 8px;" onclick="editNews(${item.id})">编辑</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteNews(${item.id})">删除</button>
+                  <button class="btn btn-secondary btn-sm" style="margin-right: 8px;" onclick="editNews(${escapeHtml(item.id)})">编辑</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteNews(${escapeHtml(item.id)})">删除</button>
                 </td>
               </tr>
             `).join('')}
@@ -401,7 +411,7 @@
 
     function showAlert(message, type) {
       const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${escapeHtml(message)}</div>`;
     }
 
     async function deleteNews(id) {

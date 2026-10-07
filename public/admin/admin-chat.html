@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>客服管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b" />
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a" />
   <style>
     .chat-container {
       display: flex;
@@ -412,10 +412,10 @@
         <div class="chat-session-item ${currentVisitorId === session.visitorId ? 'active' : ''}" 
              onclick="selectSession('${session.visitorId}')">
           <div class="chat-session-top">
-            <span class="chat-session-name">${escapeHtml(session.visitorName)}</span>
+            <span class="chat-session-name">${escapeHtml(htmlDecode(session.visitorName))}</span>
             ${session.unreadCount > 0 ? `<span class="chat-session-badge">${session.unreadCount}</span>` : ''}
           </div>
-          <div class="chat-session-preview">${escapeHtml(session.lastMessage)}</div>
+          <div class="chat-session-preview">${escapeHtml(htmlDecode(session.lastMessage))}</div>
           <div class="chat-session-time">${formatTime(session.lastMessageTime)}</div>
         </div>
       `).join('');
@@ -439,7 +439,7 @@
         chatMainHeaderInfo.innerHTML = `
           <div class="chat-main-avatar">👤</div>
           <div>
-            <div class="chat-main-title">${escapeHtml(session.visitorName)}</div>
+            <div class="chat-main-title">${escapeHtml(htmlDecode(session.visitorName))}</div>
             <div class="chat-main-meta">${session.messageCount} 条消息</div>
           </div>
         `;
@@ -475,7 +475,7 @@
       container.innerHTML = messages.map(msg => `
         <div class="message-row ${msg.sender}">
           <div>
-            <div class="message-bubble">${escapeHtml(msg.message)}</div>
+            <div class="message-bubble">${escapeHtml(htmlDecode(msg.message))}</div>
             <div class="message-time">${formatTime(msg.createdAt)}</div>
           </div>
         </div>
@@ -565,6 +565,15 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // 数据库中的消息/名称已在后端做过 HTML 实体转义（如 I&#x27;m），
+    // 直接再转义会双重转义。先解码还原为原始文本、再统一转义渲染，
+    // 同时兼容清洗上线前的存量数据。
+    function htmlDecode(text) {
+      const t = document.createElement('textarea');
+      t.innerHTML = text == null ? '' : String(text);
+      return t.value;
     }
 
     document.querySelectorAll('.quick-reply-btn').forEach(btn => {

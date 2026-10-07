@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>登录日志 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
   <style>
     .log-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     .log-table th, .log-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -126,6 +126,16 @@
     const pageSize = 20;
     let allLogs = [];
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     // 检查登录状态
     async function checkAuth() {
       try {
@@ -205,11 +215,11 @@
         const actionText = log.action === 'login' ? '登录' : log.action === 'logout' ? '登出' : log.action;
         const time = log.created_at ? new Date(log.created_at).toLocaleString('zh-CN') : '-';
         return `<tr>
-          <td>${log.id || '-'}</td>
-          <td>${log.admin_name || '-'}</td>
-          <td><span class="action-badge ${actionClass}">${actionText}</span></td>
-          <td><span class="ip-address">${log.ip || '-'}</span></td>
-          <td>${log.description || '-'}</td>
+          <td>${escapeHtml(log.id || '-')}</td>
+          <td>${escapeHtml(log.admin_name || '-')}</td>
+          <td><span class="action-badge ${actionClass}">${escapeHtml(actionText)}</span></td>
+          <td><span class="ip-address">${escapeHtml(log.ip || '-')}</span></td>
+          <td>${escapeHtml(log.description || '-')}</td>
           <td>${time}</td>
         </tr>`;
       }).join('');

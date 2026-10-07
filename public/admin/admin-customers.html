@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>客户管理 - 重庆恒慈国际贸易有限公司</title>
-  <link rel="stylesheet" href="../css/admin.css?v=20260815b">
+  <link rel="stylesheet" href="../css/admin.css?v=20261006a">
 </head>
 <body>
   <div class="sidebar">
@@ -264,6 +264,16 @@
     let editingId = null;
     let customerDataCache = [];
 
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    }
+
     async function checkAuth() {
       try {
         const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
@@ -366,18 +376,18 @@
           <tbody>
             ${customers.map(customer => `
               <tr>
-                <td><strong style="color: var(--primary-color);">${customer.name}</strong></td>
-                <td>${customer.company || '-'}</td>
-                <td>${customer.phone || '-'}${customer.email ? '<br/>' + customer.email : ''}</td>
-                <td><span class="badge badge-${customer.type}">${getTypeLabel(customer.type)}</span></td>
+                <td><strong style="color: var(--primary-color);">${escapeHtml(customer.name)}</strong></td>
+                <td>${escapeHtml(customer.company || '-')}</td>
+                <td>${escapeHtml(customer.phone || '-')}${customer.email ? '<br/>' + escapeHtml(customer.email) : ''}</td>
+                <td><span class="badge badge-${escapeHtml(customer.type)}">${escapeHtml(getTypeLabel(customer.type))}</span></td>
                 <td>
-                  ${customer.tags ? customer.tags.split(',').map(tag => `<span class="tag tag-${tag.trim()}">${tag.trim()}</span>`).join('') : '-'}
+                  ${customer.tags ? customer.tags.split(',').map(tag => `<span class="tag tag-${escapeHtml(tag.trim())}">${escapeHtml(tag.trim())}</span>`).join('') : '-'}
                 </td>
-                <td>¥${(customer.total_value || 0).toLocaleString()}</td>
+                <td>¥${escapeHtml((customer.total_value || 0).toLocaleString())}</td>
                 <td>
-                  <button class="btn btn-secondary btn-sm" onclick="viewCustomer(${customer.id})">详情</button>
-                  <button class="btn btn-primary btn-sm" onclick="editCustomer(${customer.id})">编辑</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${customer.id})">删除</button>
+                  <button class="btn btn-secondary btn-sm" onclick="viewCustomer(${escapeHtml(customer.id)})">详情</button>
+                  <button class="btn btn-primary btn-sm" onclick="editCustomer(${escapeHtml(customer.id)})">编辑</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${escapeHtml(customer.id)})">删除</button>
                 </td>
               </tr>
             `).join('')}
@@ -464,22 +474,22 @@
       const detailHtml = `
         <div style="margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="color: var(--primary-color); font-size: 20px;">${customer.name}</h3>
-            <span class="badge badge-${customer.type}">${getTypeLabel(customer.type)}</span>
+            <h3 style="color: var(--primary-color); font-size: 20px;">${escapeHtml(customer.name)}</h3>
+            <span class="badge badge-${escapeHtml(customer.type)}">${escapeHtml(getTypeLabel(customer.type))}</span>
           </div>
-          ${customer.company ? `<div style="color: var(--text-secondary); margin-top: 4px;">${customer.company}</div>` : ''}
+          ${customer.company ? `<div style="color: var(--text-secondary); margin-top: 4px;">${escapeHtml(customer.company)}</div>` : ''}
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
           <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
             <div style="font-weight: 600; margin-bottom: 12px;">📞 联系方式</div>
-            <div style="margin-bottom: 8px;">电话：${customer.phone || '-'}</div>
-            <div style="margin-bottom: 8px;">邮箱：${customer.email || '-'}</div>
-            <div>微信：${customer.wechat || '-'}</div>
+            <div style="margin-bottom: 8px;">电话：${escapeHtml(customer.phone || '-')}</div>
+            <div style="margin-bottom: 8px;">邮箱：${escapeHtml(customer.email || '-')}</div>
+            <div>微信：${escapeHtml(customer.wechat || '-')}</div>
           </div>
           <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
             <div style="font-weight: 600; margin-bottom: 12px;">🏠 基本信息</div>
-            <div style="margin-bottom: 8px;">地址：${customer.address || '-'}</div>
+            <div style="margin-bottom: 8px;">地址：${escapeHtml(customer.address || '-')}</div>
             <div style="margin-bottom: 8px;">状态：${customer.status === 'active' ? '活跃' : '停用'}</div>
             <div>创建时间：${formatDate(customer.created_at)}</div>
           </div>
@@ -488,7 +498,7 @@
         <div style="margin-bottom: 24px;">
           <div style="font-weight: 600; margin-bottom: 12px;">🏷️ 客户标签</div>
           <div>
-            ${customer.tags ? customer.tags.split(',').map(tag => `<span class="tag tag-${tag.trim()}">${tag.trim()}</span>`).join('') : '<span style="color: var(--text-muted);">暂无标签</span>'}
+            ${customer.tags ? customer.tags.split(',').map(tag => `<span class="tag tag-${escapeHtml(tag.trim())}">${escapeHtml(tag.trim())}</span>`).join('') : '<span style="color: var(--text-muted);">暂无标签</span>'}
           </div>
         </div>
 
@@ -497,11 +507,11 @@
           <div style="background: #f8f9fa; padding: 16px; border-radius: 8px;">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
               <div>
-                <div style="font-size: 24px; font-weight: 600; color: var(--primary-color);">¥${(customer.total_value || 0).toLocaleString()}</div>
+                <div style="font-size: 24px; font-weight: 600; color: var(--primary-color);">¥${escapeHtml((customer.total_value || 0).toLocaleString())}</div>
                 <div style="color: var(--text-secondary); font-size: 13px;">累计交易额</div>
               </div>
               <div>
-                <div style="font-size: 24px; font-weight: 600; color: var(--success-color);">${customer.contact_count || 0} 次</div>
+                <div style="font-size: 24px; font-weight: 600; color: var(--success-color);">${escapeHtml(customer.contact_count || 0)} 次</div>
                 <div style="color: var(--text-secondary); font-size: 13px;">联系次数</div>
               </div>
               <div>
@@ -523,7 +533,7 @@
 
         ${customer.remarks ? `<div style="background: #fff3cd; padding: 12px; border-radius: 8px;">
           <div style="font-weight: 600; color: #856404; margin-bottom: 4px;">备注</div>
-          <div>${customer.remarks}</div>
+          <div>${escapeHtml(customer.remarks)}</div>
         </div>` : ''}
       `;
       document.getElementById('detailContent').innerHTML = detailHtml;
@@ -592,7 +602,7 @@
 
     function showAlert(message, type) {
       const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
-      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+      document.getElementById('formAlert').innerHTML = `<div class="alert ${alertClass}">${escapeHtml(message)}</div>`;
     }
 
     async function deleteCustomer(id) {
@@ -698,8 +708,8 @@
       } else {
         document.getElementById('customerCheckboxes').innerHTML = customerDataCache.map(customer => `
           <label style="display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer;">
-            <input type="checkbox" class="assign-checkbox" data-id="${customer.id}">
-            <span style="font-size: 13px;">${customer.name} ${customer.company ? `(${customer.company})` : ''}</span>
+            <input type="checkbox" class="assign-checkbox" data-id="${escapeHtml(customer.id)}">
+            <span style="font-size: 13px;">${escapeHtml(customer.name)} ${customer.company ? `(${escapeHtml(customer.company)})` : ''}</span>
           </label>
         `).join('');
       }

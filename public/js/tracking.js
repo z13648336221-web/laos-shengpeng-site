@@ -5,6 +5,17 @@
 
 const TRACKING_API_URL = '/api/tracking';
 
+// 渲染转义：所有插值进 innerHTML 的 API 数据一律转义，不依赖后端入库清洗
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // 快速查询（示例单号）
 function quickTrack(num) {
   document.getElementById('trackingInput').value = num;
@@ -27,7 +38,7 @@ async function trackShipment() {
 
   try {
     const lang = window.i18n?.getCurrentLang() || 'zh';
-    const response = await fetch(`${TRACKING_API_URL}/${input}?lang=${lang}`);
+    const response = await fetch(`${TRACKING_API_URL}/${encodeURIComponent(input)}?lang=${lang}`);
     const result = await response.json();
 
     if (!result.success) {
@@ -59,20 +70,20 @@ async function trackShipment() {
       delivered: `<span class="track-status-badge status-delivered">${t('tracking.statusLabels.delivered', '✓ 已签收')}</span>`,
       cancelled: `<span class="track-status-badge status-cancelled">${t('tracking.statusLabels.cancelled', '✕ 已取消')}</span>`,
     };
-    statusEl.innerHTML = statusMap[data.status] || `<span class="track-status-badge">${data.status_label}</span>`;
+    statusEl.innerHTML = statusMap[data.status] || `<span class="track-status-badge">${escapeHtml(data.status_label)}</span>`;
 
     // 货物信息
     const cargoCard = document.getElementById('cargoInfoCard');
     cargoCard.innerHTML = `
       <h4>📦 ${t('tracking.cargoInfo', '货物信息')}</h4>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.cargoName', '品名')}：</strong>${data.cargo.description || '--'}</span></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.weight', '重量')}：</strong>${data.cargo.weight ? data.cargo.weight + ' KG' : '--'}</span></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.volume', '体积')}：</strong>${data.cargo.volume ? data.cargo.volume + ' CBM' : '--'}</span></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.origin', '起运地')}：</strong>${data.cargo.origin || '--'}</span></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.destination', '目的地')}：</strong>${data.cargo.destination || '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.cargoName', '品名')}：</strong>${escapeHtml(data.cargo.description) || '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.weight', '重量')}：</strong>${data.cargo.weight ? escapeHtml(data.cargo.weight) + ' KG' : '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.volume', '体积')}：</strong>${data.cargo.volume ? escapeHtml(data.cargo.volume) + ' CBM' : '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.origin', '起运地')}：</strong>${escapeHtml(data.cargo.origin) || '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.destination', '目的地')}：</strong>${escapeHtml(data.cargo.destination) || '--'}</span></div>
       <div style="border-top:1px solid var(--gray-200);margin:12px 0 12px;"></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.sender', '发货方')}：</strong>${data.cargo.sender_name || '--'}</span></div>
-      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.receiver', '收货方')}：</strong>${data.cargo.receiver_name || '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.sender', '发货方')}：</strong>${escapeHtml(data.cargo.sender_name) || '--'}</span></div>
+      <div class="info-item"><span class="dot"></span><span><strong>${t('tracking.receiver', '收货方')}：</strong>${escapeHtml(data.cargo.receiver_name) || '--'}</span></div>
     `;
 
     // 时间线
@@ -90,9 +101,9 @@ async function trackShipment() {
       
       li.innerHTML = `
         <div class="tl-dot"></div>
-        <div class="tl-time">${timeStr}</div>
-        <div class="tl-title">${item.status_label || item.description}</div>
-        <div class="tl-desc">${item.location ? item.location + ' - ' : ''}${item.description}</div>
+        <div class="tl-time">${escapeHtml(timeStr)}</div>
+        <div class="tl-title">${escapeHtml(item.status_label || item.description)}</div>
+        <div class="tl-desc">${item.location ? escapeHtml(item.location) + ' - ' : ''}${escapeHtml(item.description)}</div>
       `;
       timelineList.appendChild(li);
     });

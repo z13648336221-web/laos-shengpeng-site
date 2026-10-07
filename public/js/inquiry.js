@@ -262,7 +262,8 @@ const validationRules = {
   weight: { required: true, min: 1, max: 999999, message: '请输入有效重量（1-999999KG）' },
   volume: { min: 0, max: 9999, message: '请输入有效体积（0-9999 CBM）' },
   contactName: { required: true, minLength: 2, maxLength: 20, pattern: /^[\u4e00-\u9fa5a-zA-Z\s]+$/, message: '请输入有效姓名（2-20个字符，支持中文和英文）' },
-  contactPhone: { required: true, pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码' },
+  // 支持国际号码（+国家码，8-15位数字）：老挝/泰国/越南客户是核心客群，与后端 Joi 校验保持一致
+  contactPhone: { required: true, pattern: /^\+?[0-9]{8,15}$/, message: '请输入有效的电话号码（支持国际区号，如 +85620...）' },
 };
 
 // =============================================

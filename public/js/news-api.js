@@ -7,6 +7,17 @@ let currentCategory = '';
 let currentPage = 1;
 let totalPages = 1;
 
+// 渲染转义：新闻数据可能经 multipart 上传绕过后端清洗，前端必须自行转义
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 async function loadNews(category = '', page = 1, append = false) {
   const lang = window.i18n?.getCurrentLang() || 'zh';
   const container = document.querySelector('.news-list') || document.querySelector('.news-grid');
@@ -81,28 +92,28 @@ function renderNewsList(newsList, container) {
   container.innerHTML = newsList.map(news => {
     const bgColor = categoryColors[news.category] || categoryColors.company;
     const icon = categoryIcons[news.category] || '📰';
-    const categoryName = lang === 'zh' 
+    const categoryName = lang === 'zh'
       ? (categoryNames[news.category] || news.category)
       : (news.category_label || categoryNames[news.category] || news.category);
-    
+
     const title = news.title || '无标题';
     const summary = news.summary || '';
     const content = news.content || '';
 
     return `
-      <div class="news-card" data-cat="${news.category}" data-id="${news.id}">
+      <div class="news-card" data-cat="${escapeHtml(news.category)}" data-id="${escapeHtml(news.id)}">
         <div class="news-img" style="background:${bgColor};">
-          <span class="news-cat">${categoryName}</span>
+          <span class="news-cat">${escapeHtml(categoryName)}</span>
           ${icon}
         </div>
         <div class="news-body">
           <div class="news-meta">
-            <span>📅 ${news.publish_date || (news.created_at ? news.created_at.split('T')[0] : '')}</span>
+            <span>📅 ${escapeHtml(news.publish_date || (news.created_at ? news.created_at.split('T')[0] : ''))}</span>
             <span>👁 点击查看</span>
           </div>
-          <h3>${title}</h3>
-          <p>${summary || (content ? content.substring(0, 100) + '...' : '')}</p>
-          <span class="news-read-more" onclick="viewNewsDetail(${news.id})" style="cursor:pointer;">${moreText}</span>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(summary || (content ? content.substring(0, 100) + '...' : ''))}</p>
+          <span class="news-read-more" onclick="viewNewsDetail(${escapeHtml(news.id)})" style="cursor:pointer;">${moreText}</span>
         </div>
       </div>
     `;
@@ -167,24 +178,24 @@ function showNewsModal(news) {
     padding: 20px;
   `;
 
-  const imageUrl = news.image_url ? (news.image_url.startsWith('http') ? news.image_url : news.image_url) : '';
+  const imageUrl = news.image_url ? news.image_url : '';
   const imageHtml = imageUrl ? `
     <div style="margin-bottom: 20px;">
-      <img src="${imageUrl}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;" alt="新闻图片" />
+      <img src="${escapeHtml(imageUrl)}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;" alt="新闻图片" />
     </div>
   ` : '';
-  
+
   modal.innerHTML = `
     <div style="background: white; border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
       <button onclick="closeNewsModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 28px; cursor: pointer; color: #666; z-index: 1;">×</button>
       <div style="padding: 32px;">
-        <span style="display:inline-block; background: var(--primary); color: white; font-size: 12px; padding: 4px 12px; border-radius: 12px; margin-bottom: 16px;">${categoryName}</span>
-        <h2 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 16px; line-height: 1.4;">${title}</h2>
+        <span style="display:inline-block; background: var(--primary); color: white; font-size: 12px; padding: 4px 12px; border-radius: 12px; margin-bottom: 16px;">${escapeHtml(categoryName)}</span>
+        <h2 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 16px; line-height: 1.4;">${escapeHtml(title)}</h2>
         <div style="font-size: 14px; color: #666; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
-          📅 ${news.publish_date || (news.created_at ? news.created_at.split('T')[0] : '')}
+          📅 ${escapeHtml(news.publish_date || (news.created_at ? news.created_at.split('T')[0] : ''))}
         </div>
         ${imageHtml}
-        <div style="font-size: 15px; color: #555; line-height: 1.8; white-space: pre-wrap;">${content}</div>
+        <div style="font-size: 15px; color: #555; line-height: 1.8; white-space: pre-wrap;">${escapeHtml(content)}</div>
       </div>
     </div>
   `;
@@ -256,28 +267,28 @@ function appendNewsList(newsList, container) {
   const newsHtml = newsList.map(news => {
     const bgColor = categoryColors[news.category] || categoryColors.company;
     const icon = categoryIcons[news.category] || '📰';
-    const categoryName = lang === 'zh' 
+    const categoryName = lang === 'zh'
       ? (categoryNames[news.category] || news.category)
       : (news.category_label || categoryNames[news.category] || news.category);
-    
+
     const title = news.title || '无标题';
     const summary = news.summary || '';
     const content = news.content || '';
 
     return `
-      <div class="news-card" data-cat="${news.category}" data-id="${news.id}">
+      <div class="news-card" data-cat="${escapeHtml(news.category)}" data-id="${escapeHtml(news.id)}">
         <div class="news-img" style="background:${bgColor};">
-          <span class="news-cat">${categoryName}</span>
+          <span class="news-cat">${escapeHtml(categoryName)}</span>
           ${icon}
         </div>
         <div class="news-body">
           <div class="news-meta">
-            <span>📅 ${news.publish_date || (news.created_at ? news.created_at.split('T')[0] : '')}</span>
+            <span>📅 ${escapeHtml(news.publish_date || (news.created_at ? news.created_at.split('T')[0] : ''))}</span>
             <span>👁 点击查看</span>
           </div>
-          <h3>${title}</h3>
-          <p>${summary || (content ? content.substring(0, 100) + '...' : '')}</p>
-          <span class="news-read-more" onclick="viewNewsDetail(${news.id})" style="cursor:pointer;">${moreText}</span>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(summary || (content ? content.substring(0, 100) + '...' : ''))}</p>
+          <span class="news-read-more" onclick="viewNewsDetail(${escapeHtml(news.id)})" style="cursor:pointer;">${moreText}</span>
         </div>
       </div>
     `;
