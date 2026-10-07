@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const getMessages = (lang) => {
   const messages = {
@@ -119,7 +120,8 @@ router.get('/:code', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+// 服务数据是官网核心业务数据，写操作仅限超级管理员
+router.post('/', authMiddleware, requireRole('super_admin'), async (req, res) => {
   try {
     const lang = req.lang || 'zh';
     const msg = getMessages(lang);
@@ -148,26 +150,30 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:code', async (req, res) => {
+router.put('/:code', authMiddleware, requireRole('super_admin'), async (req, res) => {
   try {
     const lang = req.lang || 'zh';
     const msg = getMessages(lang);
     const { name_zh, name_en, name_vi, description_zh, description_en, description_vi, base_price, min_price, max_price, customs_fee, insurance_rate, transit_days, features, image_url, priority } = req.body;
-    
+
     const services = await db.query('services');
     const service = services.find(s => s.code === req.params.code);
-    
+
     if (!service) {
       return res.status(404).json({ success: false, message: msg.not_found });
     }
-    
-    Object.assign(service, {
-      name_zh, name_en, name_vi, description_zh, description_en, description_vi, 
-      base_price, min_price, max_price, customs_fee, insurance_rate, transit_days, 
-      features: typeof features === 'string' ? features : JSON.stringify(features || []), 
-      image_url, priority: priority || 0
-    });
-    
+
+    const featuresJson = typeof features === 'string' ? features : JSON.stringify(features || []);
+    await db.run(`
+      UPDATE services
+      SET name_zh = ?, name_en = ?, name_vi = ?, description_zh = ?, description_en = ?, description_vi = ?,
+          base_price = ?, min_price = ?, max_price = ?, customs_fee = ?, insurance_rate = ?, transit_days = ?,
+          features = ?, image_url = ?, priority = ?
+      WHERE code = ?
+    `, [name_zh, name_en, name_vi, description_zh, description_en, description_vi,
+        base_price, min_price, max_price, customs_fee, insurance_rate, transit_days,
+        featuresJson, image_url, priority || 0, req.params.code]);
+
     res.json({ success: true, message: msg.updated });
   } catch (err) {
     console.error('更新服务失败:', err);
@@ -176,7 +182,7 @@ router.put('/:code', async (req, res) => {
   }
 });
 
-router.delete('/:code', async (req, res) => {
+router.delete('/:code', authMiddleware, requireRole('super_admin'), async (req, res) => {
   try {
     const lang = req.lang || 'zh';
     const msg = getMessages(lang);

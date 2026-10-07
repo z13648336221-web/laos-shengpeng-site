@@ -51,7 +51,11 @@ try {
   `);
   
   insertAdmin.run('admin', hashedPassword, '系统管理员', 'admin@hengciglobal.com', 'super_admin', 'active');
-  console.log(`✓ 默认管理员账户创建成功 (用户名: admin, 初始密码: ${initialPassword}，请立即修改)`);
+  if (process.env.ADMIN_INITIAL_PASSWORD) {
+    console.log('✓ 默认管理员账户创建成功 (用户名: admin, 密码取自 ADMIN_INITIAL_PASSWORD 环境变量，不打印到日志)');
+  } else {
+    console.log(`✓ 默认管理员账户创建成功 (用户名: admin, 一次性初始密码: ${initialPassword}，仅此一次显示，请立即修改)`);
+  }
   
   // 插入默认服务数据
   const insertService = db.prepare(`

@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
-const { authMiddleware, hashPassword } = require('../middleware/auth');
+const { authMiddleware, hashPassword, requireRole } = require('../middleware/auth');
 
 router.use(authMiddleware);
+// 管理员账号管理（创建/修改/删除）仅限超级管理员，防止普通 admin 自我提权
+router.use(requireRole('super_admin'));
 
 router.get('/', async (req, res) => {
   try {
@@ -59,9 +61,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    
+
     if (!username) {
       return res.status(400).json({ success: false, message: '用户名不能为空' });
+    }
+
+    // 禁止修改自己的角色，防止误操作自我降权后失去管理能力
+    if (role && parseInt(req.params.id) === req.admin.id && role !== req.admin.role) {
+      return res.status(400).json({ success: false, message: '不能修改自己的角色' });
     }
 
     const existing = await db.get('admins', { username });
@@ -90,6 +97,10 @@ router.delete('/:id', async (req, res) => {
     
     if (id === 1) {
       return res.status(400).json({ success: false, message: '无法删除超级管理员' });
+    }
+
+    if (id === req.admin.id) {
+      return res.status(400).json({ success: false, message: '不能删除自己的账户' });
     }
 
     const admin = await db.get('admins', { id });

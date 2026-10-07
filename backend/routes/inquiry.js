@@ -64,9 +64,10 @@ router.post('/', async (req, res) => {
       need_customs: Joi.string().valid('yes', 'no').default('no'),
       need_insurance: Joi.string().valid('yes', 'no').default('no'),
       contact_name: Joi.string().min(2).max(20).required().messages({ 'any.required': msg.required }),
-      contact_phone: Joi.string().pattern(/^1[3-9]\d{9}$/).required().messages({ 
+      // 支持国际号码（+国家码，8-15位数字）：老挝/泰国/越南客户是核心客群，不能只允许中国大陆手机号
+      contact_phone: Joi.string().trim().pattern(/^\+?[0-9]{8,15}$/).required().messages({
         'any.required': msg.required,
-        'string.pattern.base': msg.invalid_phone 
+        'string.pattern.base': msg.invalid_phone
       }),
       contact_email: Joi.string().email().allow('').optional(),
       company_name: Joi.string().max(100).allow('').optional(),

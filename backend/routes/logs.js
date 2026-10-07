@@ -1,9 +1,49 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 router.use(authMiddleware);
+
+// 审计日志的删除/清空仅限超级管理员，防止普通管理员清痕；
+// 且清空动作本身写入一条不可删的记录留痕
+router.delete('/:id', requireRole('super_admin'), async (req, res) => {
+  try {
+    await db.delete('logs', { id: parseInt(req.params.id) });
+    res.json({ success: true, message: '日志删除成功' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: '删除日志失败' });
+  }
+});
+
+router.delete('/batch/clear', requireRole('super_admin'), async (req, res) => {
+  try {
+    const { days } = req.body;
+    let deletedCount = 0;
+    if (days) {
+      const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const logs = await db.query('logs');
+      const oldLogs = logs.filter(log => log.created_at < cutoffDate);
+      for (const log of oldLogs) {
+        await db.delete('logs', { id: log.id });
+      }
+      deletedCount = oldLogs.length;
+    } else {
+      const logs = await db.query('logs');
+      for (const log of logs) {
+        await db.delete('logs', { id: log.id });
+      }
+      deletedCount = logs.length;
+    }
+    // 清空后留痕：记录本次清理操作本身
+    await logAction(req.admin.id, req.admin.username, 'clear_logs',
+      `清理了${deletedCount}条日志${days ? `（${days}天前）` : '（全部）'}`,
+      req.ip || 'unknown');
+    res.json({ success: true, message: days ? `已删除${deletedCount}条${days}天前的日志` : `已清空${deletedCount}条日志` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: '清空日志失败' });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -53,37 +93,6 @@ router.get('/:id', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ success: false, message: '获取日志失败' });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    await db.delete('logs', { id: parseInt(req.params.id) });
-    res.json({ success: true, message: '日志删除成功' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: '删除日志失败' });
-  }
-});
-
-router.delete('/batch/clear', async (req, res) => {
-  try {
-    const { days } = req.body;
-    if (days) {
-      const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-      const logs = await db.query('logs');
-      const oldLogs = logs.filter(log => log.created_at < cutoffDate);
-      for (const log of oldLogs) {
-        await db.delete('logs', { id: log.id });
-      }
-      res.json({ success: true, message: `已删除${oldLogs.length}条${days}天前的日志` });
-    } else {
-      await db.query('logs').then(logs => {
-        logs.forEach(log => db.delete('logs', { id: log.id }));
-      });
-      res.json({ success: true, message: '所有日志已清空' });
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, message: '清空日志失败' });
   }
 });
 

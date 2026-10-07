@@ -12,6 +12,15 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 启动前校验必需环境变量（在建立 SSH 连接前失败），凭证不在代码中硬编码
+const requiredEnv = ['DEPLOY_HOST', 'DEPLOY_USER', 'DEPLOY_KEY'];
+const missingEnv = requiredEnv.filter(name => !process.env[name]);
+if (missingEnv.length > 0) {
+  console.error('✗ 缺少部署配置环境变量: ' + missingEnv.join(', '));
+  console.error('  用法示例: DEPLOY_HOST=<服务器IP> DEPLOY_USER=<用户> DEPLOY_KEY=<SSH私钥路径> node deploy-simple.js');
+  process.exit(1);
+}
+
 // 需要上传的文件列表
 const filesToUpload = [
   // 前端文件 (使用原始文件)
@@ -64,9 +73,10 @@ const filesToUpload = [
   './public/sitemap.xml',
   
   // 后端核心文件
+  // 注意：严禁上传 backend/.env 和 backend/database/shengpeng.db ——
+  // 会用本地配置/开发数据覆盖生产环境配置与线上订单客户数据
   './backend/package.json',
   './backend/package-lock.json',
-  './backend/.env',
   './backend/server.js',
   './backend/models/database.js',
   './backend/middleware/auth.js',
@@ -75,7 +85,6 @@ const filesToUpload = [
   
   // 数据库相关文件
   './backend/database/schema.sql',
-  './backend/database/shengpeng.db',
   './backend/scripts/init-sqlite.js',
   './backend/scripts/migrate-to-sqlite.js',
   
@@ -194,14 +203,15 @@ conn.on('ready', () => {
 }).on('error', (err) => {
   console.error('SSH连接失败:', err.message);
   console.log('\n请检查:');
-  console.log('1. SSH密钥路径是否正确');
+  console.log('1. 环境变量 DEPLOY_HOST / DEPLOY_USER / DEPLOY_KEY 是否正确');
   console.log('2. 服务器是否可访问');
   console.log('3. 网络连接是否正常');
 }).connect({
-  host: 'SERVER_IP_REDACTED',
-  port: 22,
-  username: 'REDACTED',
-  privateKey: fs.readFileSync('C:\\Users\\Administrator\\.ssh\\id_ed25519_laos'),
+  // 凭证一律从环境变量读取，不在代码中硬编码服务器 IP / 账号
+  host: process.env.DEPLOY_HOST,
+  port: parseInt(process.env.DEPLOY_PORT || '22', 10),
+  username: process.env.DEPLOY_USER,
+  privateKey: fs.readFileSync(process.env.DEPLOY_KEY),
   readyTimeout: 30000
 });
 
@@ -211,33 +221,21 @@ function showInstructions() {
   console.log('='.repeat(60));
   console.log('\n请通过SSH手动执行以下命令:\n');
   console.log('1. 连接到服务器:');
-  console.log('   ssh -i "C:\\Users\\Administrator\\.ssh\\id_ed25519_laos" USER@SERVER_IP_REDACTED');
+  console.log('   ssh -i $DEPLOY_KEY $DEPLOY_USER@$DEPLOY_HOST');
   console.log('\n2. 进入后端目录:');
   console.log('   cd /var/www/laos-logistics/backend');
-  console.log('\n3. 创建安全上传目录:');
-  console.log('   mkdir -p secure-uploads/news secure-uploads/documents secure-uploads/avatars');
-  console.log('\n4. 安装依赖:');
-  console.log('   npm install');
-  console.log('\n5. 重启 Node.js 服务:');
-  console.log('   pkill -f "node.*server.js"');
-  console.log('   nohup node server.js > /dev/null 2>&1 &');
-  console.log('\n6. 验证服务:');
-  console.log('   curl http://localhost:3001/api/news');
-  console.log('\n7. 查看服务日志:');
-  console.log('   tail -f nohup.out');
+  console.log('\n3. 安装依赖（如 package.json 有变更）:');
+  console.log('   npm install --production');
+  console.log('\n4. 重启服务（服务器使用 PM2 管理）:');
+  console.log('   pm2 restart laos-backend   # 或 pm2 list 查看实际进程名');
+  console.log('\n5. 验证服务:');
+  console.log('   curl http://localhost:3001/api/health');
+  console.log('\n6. 查看服务日志:');
+  console.log('   pm2 logs laos-backend --lines 50');
   console.log('\n' + '='.repeat(60));
-  console.log('✅ 前端文件已重组优化');
-  console.log('✅ 安全加固功能已上传到服务器');
-  console.log('✅ 数据库监控系统已上传到服务器');
-  console.log('✅ 文件上传安全功能已上传到服务器');
-  console.log('✅ 聊天接口安全功能已上传到服务器');
-  console.log('✅ SQLite数据库已上传到服务器');
-  console.log('='.repeat(60));
   console.log('📝 注意事项:');
-  console.log('- 前端文件已重组为清晰的项目结构');
-  console.log('- 静态资源移动到 public/ 目录');
-  console.log('- 管理后台页面移动到 public/admin/ 目录');
-  console.log('- 服务页面移动到 public/services/ 目录');
-  console.log('- 所有路径引用已更新，网站功能正常');
+  console.log('- 本次部署未上传 backend/.env（生产环境配置以服务器为准）');
+  console.log('- 本次部署未上传生产数据库 shengpeng.db（严禁用本地库覆盖线上）');
+  console.log('- 若后端有新增依赖或表结构变更，请先在服务器上执行迁移');
   console.log('='.repeat(60));
 }

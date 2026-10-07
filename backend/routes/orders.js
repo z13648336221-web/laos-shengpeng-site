@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 
@@ -11,6 +12,7 @@ const getMessages = (lang) => {
       created: '订单创建成功',
       updated: '订单更新成功',
       deleted: '删除成功',
+      invalid_status: '无效的订单状态',
       error: '服务器内部错误'
     },
     en: {
@@ -19,6 +21,7 @@ const getMessages = (lang) => {
       created: 'Order created successfully',
       updated: 'Order updated successfully',
       deleted: 'Deleted successfully',
+      invalid_status: 'Invalid order status',
       error: 'Internal server error'
     },
     vi: {
@@ -27,6 +30,7 @@ const getMessages = (lang) => {
       created: 'Tạo đơn hàng thành công',
       updated: 'Cập nhật đơn hàng thành công',
       deleted: 'Xóa thành công',
+      invalid_status: 'Trạng thái đơn hàng không hợp lệ',
       error: 'Lỗi máy chủ nội bộ'
     }
   };
@@ -206,7 +210,13 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const updates = [];
     const params = [];
     
+    const ALLOWED_STATUSES = ['pending', 'picked_up', 'in_transit', 'departed', 'customs', 'delivered', 'cancelled'];
+
     if (status && status !== order.status) {
+      if (!ALLOWED_STATUSES.includes(status)) {
+        return res.status(400).json({ success: false, message: msg.invalid_status });
+      }
+
       updates.push('status = ?');
       params.push(status);
       
@@ -285,7 +295,13 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 function generateTrackingNumber() {
   const prefix = 'SP';
   const year = new Date().getFullYear().toString().slice(-2);
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  // 8 位无混淆字符集（约 1.1 万亿组合），防止公开查询接口被遍历枚举
+  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const bytes = crypto.randomBytes(8);
+  let random = '';
+  for (let i = 0; i < 8; i++) {
+    random += alphabet[bytes[i] % alphabet.length];
+  }
   return `${prefix}${year}${random}`;
 }
 

@@ -10,6 +10,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// 信任反向代理（默认 1 层，即 nginx）：
+// 使 req.ip 取 X-Forwarded-For 的真实客户端 IP，保证限流/登录锁定的键准确。
+// 直连部署时设置环境变量 TRUST_PROXY=0 关闭。
+const trustProxy = Number(process.env.TRUST_PROXY !== undefined ? process.env.TRUST_PROXY : 1);
+if (!Number.isNaN(trustProxy) && trustProxy >= 0) {
+  app.set('trust proxy', trustProxy);
+}
+
 // =============================================
 // 安全头 - Helmet
 // =============================================
@@ -76,14 +84,23 @@ const inquiryLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// 聊天接口速率限制（更严格，防止刷屏）
-const chatLimiter = rateLimit({
+// 聊天接口速率限制 —— 读写分开：
+// 前端每 3 秒轮询一次未读消息，读接口必须放宽，否则轮询会被打死；
+// 写（发消息）保持严格限制防刷屏
+const chatWriteLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1分钟窗口
-  max: 5,                   // 每个IP每分钟最多5条消息
+  max: 10,                  // 每个IP每分钟最多10条消息
   message: { success: false, message: '消息发送过于频繁，请稍后再试' },
   standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false // 成功的请求也计入限制
+  legacyHeaders: false
+});
+
+const chatReadLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,                  // 轮询约 20次/分钟/标签页，留出多标签页余量
+  message: { success: false, message: '请求过于频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 // 新闻列表和详情接口使用更宽松的速率限制（只读操作）
@@ -150,7 +167,7 @@ app.use('/api/inquiry', inquiryLimiter);
 app.use('/api/files', rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
   max: 100, // 每个IP 15分钟内最多100次文件访问
-  message: '文件访问请求过于频繁，请稍后再试'
+  message: { success: false, message: '文件访问请求过于频繁，请稍后再试' }
 }));
 
 app.use('/api/auth', authRoutes);
@@ -161,7 +178,10 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/quotes', quoteRoutes);
-app.use('/api/chat', chatLimiter, chatRoutes);
+app.use('/api/chat', (req, res, next) => {
+  if (req.method === 'GET') return chatReadLimiter(req, res, next);
+  return chatWriteLimiter(req, res, next);
+}, chatRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/logs', logRoutes);
@@ -277,19 +297,34 @@ app.get('/api/health', (req, res) => {
     en: 'CHONGQING HENGCI INTERNATIONAL TRADE CO., LTD. Backend Service is running normally',
     vi: 'Dịch vụ backend của CHONGQING HENGCI INTERNATIONAL TRADE CO., LTD. đang hoạt động bình thường'
   };
-  
-  res.json({ 
-    status: 'ok', 
+
+  res.json({
+    status: 'ok',
     message: messages[req.lang] || messages.zh,
     language: req.lang
+  });
+});
+
+// =============================================
+// 全局错误处理器 —— 兜底所有路由/中间件抛出的错误
+// 避免未配置 NODE_ENV 时 Express 默认处理器把错误堆栈返回给客户端
+// =============================================
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) {
+    console.error('[Error]', req.method, req.originalUrl, err);
+  }
+  res.status(status).json({
+    success: false,
+    message: isProduction ? '服务器内部错误' : (err.message || '服务器内部错误')
   });
 });
 
 /**
  * 初始化/升级管理员账户
  * - 无任何管理员时：用 ADMIN_INITIAL_PASSWORD 环境变量或随机密码创建 admin
- * - 已存在管理员但密码仍是默认值 [REDACTED] 且设置了 ADMIN_INITIAL_PASSWORD 时：自动升级密码
- * - 不硬编码任何默认密码
+ * - 已存在管理员但密码仍是默认值 [REDACTED]：立即强制重置为随机密码（[REDACTED] 已随文档公开泄漏）
+ * - 环境变量提供的密码不打印到日志
  */
 async function initDefaultAdmin() {
   const admins = await db.query('admins');
@@ -303,11 +338,15 @@ async function initDefaultAdmin() {
       password: hashPassword(initialPassword),
       role: 'admin'
     });
-    console.log(`[Security] 默认管理员账户已创建：用户名 admin，初始密码：${initialPassword}（请立即登录后修改密码）`);
+    if (envPassword) {
+      console.log('[Security] 默认管理员账户已创建：用户名 admin，密码取自 ADMIN_INITIAL_PASSWORD 环境变量（不打印到日志）');
+    } else {
+      console.log(`[Security] 默认管理员账户已创建：用户名 admin，一次性初始密码：${initialPassword}（仅此一次显示，请立即登录后修改密码）`);
+    }
     return;
   }
 
-  // 检查是否有管理员仍在使用默认密码 [REDACTED]
+  // 检查是否有管理员仍在使用默认密码 [REDACTED]（该密码已随公开文档泄漏，直接重置而非告警）
   for (const admin of admins) {
     if (admin.password && comparePassword(defaultPassword, admin.password)) {
       if (envPassword) {
@@ -317,7 +356,15 @@ async function initDefaultAdmin() {
         });
         console.log(`[Security] 管理员 ${admin.username} 已从默认密码升级为 ADMIN_INITIAL_PASSWORD 指定密码`);
       } else {
-        console.warn(`[Security] 警告：管理员 ${admin.username} 仍在使用默认密码 [REDACTED]！请立即登录修改，或设置环境变量 ADMIN_INITIAL_PASSWORD 后重启自动升级。`);
+        const resetPassword = crypto.randomBytes(12).toString('base64url');
+        await db.update('admins', { id: admin.id }, {
+          password: hashPassword(resetPassword),
+          updated_at: new Date().toISOString()
+        });
+        console.warn('============================================================');
+        console.warn(`[Security] 管理员 ${admin.username} 仍在使用已泄漏的默认密码 [REDACTED]，已强制重置！`);
+        console.warn(`[Security] 一次性新密码：${resetPassword}（仅此一次显示，请立即登录后修改密码）`);
+        console.warn('============================================================');
       }
     }
   }

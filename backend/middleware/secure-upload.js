@@ -8,6 +8,21 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 const { scanFile } = require('../utils/virus-scanner');
+const { sanitizeObject } = require('./security');
+
+// multer 解析后 req.body 才有值，全局 XSS 中间件此时已执行过，
+// 因此必须在 multer 完成后对 multipart 文本字段补一次清洗
+const SKIP_SANITIZE_FIELDS = ['password', 'oldPassword', 'newPassword'];
+
+function sanitizeMultipartBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(req.body)) {
+      cleaned[key] = SKIP_SANITIZE_FIELDS.includes(key) ? value : sanitizeObject(value);
+    }
+    req.body = cleaned;
+  }
+}
 
 /**
  * 文件魔数（文件头）定义
@@ -183,6 +198,7 @@ function createSecureUpload(options = {}) {
       return async (req, res, next) => {
         upload.single(fieldName)(req, res, async (err) => {
           if (err) return next(err);
+          sanitizeMultipartBody(req);
           
           // 验证文件内容
           if (req.file) {
@@ -224,6 +240,7 @@ function createSecureUpload(options = {}) {
       return async (req, res, next) => {
         upload.fields(fields)(req, res, async (err) => {
           if (err) return next(err);
+          sanitizeMultipartBody(req);
           
           // 验证所有文件内容
           if (req.files) {
@@ -293,6 +310,7 @@ function createSecureUpload(options = {}) {
       return async (req, res, next) => {
         upload.array(fieldName, maxCount)(req, res, async (err) => {
           if (err) return next(err);
+          sanitizeMultipartBody(req);
           
           // 验证所有文件内容
           if (req.files) {

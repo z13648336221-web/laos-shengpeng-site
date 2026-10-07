@@ -40,6 +40,15 @@ desktop.ini
 *.temp
 .cache/
 
+# 安全审计与内部报告（禁止公开推送）
+docs/SECURITY_AUDIT_*.md
+项目检查报告.docx
+
+# 本地测试/AI 工具残留
+_test_*
+启动DeepSeek-Harness.bat
+backend/scripts/_*.cjs
+
 # 构建输出
 dist/
 build/

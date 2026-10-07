@@ -57,6 +57,22 @@ function isTableName(str) {
   return typeof str === 'string' && !/\s/.test(str.trim());
 }
 
+// 标识符（表名/列名）白名单校验：所有进入 SQL 拼接的标识符必须匹配，
+// 防止未来某个调用方把用户输入传入对象 key / orderBy 时变成 SQL 注入
+const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function assertIdentifier(name, label = 'identifier') {
+  if (typeof name !== 'string' || !IDENTIFIER_RE.test(name)) {
+    throw new Error(`Illegal SQL ${label}: ${String(name)}`);
+  }
+  return name;
+}
+
+function assertColumns(columns) {
+  columns.forEach(col => assertIdentifier(col, 'column name'));
+  return columns;
+}
+
 /**
  * 执行查询并返回所有结果
  * 兼容两种调用方式:
@@ -71,6 +87,7 @@ function query(sql, params = []) {
   try {
     // 兼容旧接口: db.query('表名') 直接查询整张表
     if (isTableName(sql)) {
+      assertIdentifier(sql, 'table name');
       sql = `SELECT * FROM ${sql}`;
     }
     const stmt = db.prepare(sql);
@@ -95,6 +112,8 @@ function get(sql, params = []) {
   try {
     // 兼容旧接口: db.get('表名', { 条件对象 })
     if (typeof params === 'object' && !Array.isArray(params) && params !== null) {
+      assertIdentifier(sql, 'table name');
+      assertColumns(Object.keys(params));
       const whereClause = Object.keys(params).map(col => `${col} = ?`).join(' AND ');
       const values = Object.values(params);
       sql = `SELECT * FROM ${sql} WHERE ${whereClause} LIMIT 1`;
@@ -138,10 +157,11 @@ function insert(table, data) {
   }
   
   try {
-    const columns = Object.keys(data);
+    const columns = assertColumns(Object.keys(data));
     const placeholders = columns.map(() => '?').join(', ');
     const values = Object.values(data);
-    
+
+    assertIdentifier(table, 'table name');
     const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
     return run(sql, values);
   } catch (error) {
@@ -157,12 +177,15 @@ function update(table, conditions, updates) {
   if (!db) {
     throw new Error('Database not initialized');
   }
-  
+
   try {
+    assertIdentifier(table, 'table name');
+    assertColumns(Object.keys(updates));
+    assertColumns(Object.keys(conditions));
     const setClause = Object.keys(updates).map(col => `${col} = ?`).join(', ');
     const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
     const values = [...Object.values(updates), ...Object.values(conditions)];
-    
+
     const sql = `UPDATE ${table} SET ${setClause} WHERE ${whereClause}`;
     return run(sql, values);
   } catch (error) {
@@ -178,11 +201,13 @@ function deleteRow(table, conditions) {
   if (!db) {
     throw new Error('Database not initialized');
   }
-  
+
   try {
+    assertIdentifier(table, 'table name');
+    assertColumns(Object.keys(conditions));
     const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
     const values = Object.values(conditions);
-    
+
     const sql = `DELETE FROM ${table} WHERE ${whereClause}`;
     return run(sql, values);
   } catch (error) {
@@ -200,9 +225,11 @@ function find(table, conditions) {
   }
   
   try {
+    assertIdentifier(table, 'table name');
+    assertColumns(Object.keys(conditions));
     const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
     const values = Object.values(conditions);
-    
+
     const sql = `SELECT * FROM ${table} WHERE ${whereClause} LIMIT 1`;
     return get(sql, values);
   } catch (error) {
@@ -220,30 +247,41 @@ function findAll(table, conditions = {}, options = {}) {
   }
   
   try {
+    assertIdentifier(table, 'table name');
     let sql = `SELECT * FROM ${table}`;
     const values = [];
-    
+
     if (Object.keys(conditions).length > 0) {
+      assertColumns(Object.keys(conditions));
       const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
       sql += ` WHERE ${whereClause}`;
       values.push(...Object.values(conditions));
     }
-    
+
     if (options.orderBy) {
+      assertIdentifier(options.orderBy, 'ORDER BY column');
       sql += ` ORDER BY ${options.orderBy}`;
       if (options.orderDir) {
-        sql += ` ${options.orderDir.toUpperCase()}`;
+        const dir = String(options.orderDir).toUpperCase();
+        if (dir !== 'ASC' && dir !== 'DESC') {
+          throw new Error(`Illegal ORDER BY direction: ${options.orderDir}`);
+        }
+        sql += ` ${dir}`;
       }
     }
-    
+
     if (options.limit) {
-      sql += ` LIMIT ${options.limit}`;
+      const limit = parseInt(options.limit, 10);
+      if (Number.isNaN(limit) || limit < 0) throw new Error('Illegal LIMIT');
+      sql += ` LIMIT ${limit}`;
     }
-    
+
     if (options.offset) {
-      sql += ` OFFSET ${options.offset}`;
+      const offset = parseInt(options.offset, 10);
+      if (Number.isNaN(offset) || offset < 0) throw new Error('Illegal OFFSET');
+      sql += ` OFFSET ${offset}`;
     }
-    
+
     return query(sql, values);
   } catch (error) {
     console.error('FindAll error:', error.message);
@@ -260,10 +298,12 @@ function count(table, conditions = {}) {
   }
   
   try {
+    assertIdentifier(table, 'table name');
     let sql = `SELECT COUNT(*) as count FROM ${table}`;
     const values = [];
-    
+
     if (Object.keys(conditions).length > 0) {
+      assertColumns(Object.keys(conditions));
       const whereClause = Object.keys(conditions).map(col => `${col} = ?`).join(' AND ');
       sql += ` WHERE ${whereClause}`;
       values.push(...Object.values(conditions));

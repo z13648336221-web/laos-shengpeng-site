@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const db = require('../models/database');
+const { authMiddleware } = require('../middleware/auth');
+
+// 公开运单查询限流：单号空间有限，防止遍历枚举
+const trackingQueryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { success: false, message: '查询过于频繁，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 const getMessages = (lang) => {
   const messages = {
@@ -54,7 +65,7 @@ const getCityLabel = (cityCode) => {
   return labels[cityCode] || cityCode;
 };
 
-router.get('/:trackingNo', async (req, res) => {
+router.get('/:trackingNo', trackingQueryLimiter, async (req, res) => {
   try {
     const trackingNo = req.params.trackingNo.toUpperCase();
     const lang = req.lang || 'zh';
@@ -111,6 +122,7 @@ router.get('/:trackingNo', async (req, res) => {
       }
     }
     
+    // 公开接口不返回手机号等敏感 PII（防止单号枚举拖库）
     const cargo = isOrder ? {
       description: shipment.cargo_name,
       weight: shipment.weight,
@@ -118,9 +130,7 @@ router.get('/:trackingNo', async (req, res) => {
       origin: getCityLabel(shipment.origin_city),
       destination: getCityLabel(shipment.dest_city),
       sender_name: shipment.sender_name,
-      sender_phone: shipment.sender_phone,
-      receiver_name: shipment.receiver_name,
-      receiver_phone: shipment.receiver_phone
+      receiver_name: shipment.receiver_name
     } : {
       description: shipment.goods_description,
       weight: shipment.weight,
@@ -128,9 +138,7 @@ router.get('/:trackingNo', async (req, res) => {
       origin: shipment.origin,
       destination: shipment.destination,
       sender_name: shipment.sender_name,
-      sender_phone: shipment.sender_phone,
-      receiver_name: shipment.receiver_name,
-      receiver_phone: shipment.receiver_phone
+      receiver_name: shipment.receiver_name
     };
     
     res.json({
@@ -152,7 +160,8 @@ router.get('/:trackingNo', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+// 运单列表含全部客户 PII，仅限管理员
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     
@@ -178,7 +187,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+// 创建运单仅限管理员（防止伪造运单）
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const lang = req.lang || 'zh';
     const msg = getMessages(lang);
@@ -216,7 +226,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/:trackingNo/events', async (req, res) => {
+// 追加物流轨迹事件仅限管理员（防止伪造轨迹）
+router.post('/:trackingNo/events', authMiddleware, async (req, res) => {
   try {
     const trackingNo = req.params.trackingNo.toUpperCase();
     const lang = req.lang || 'zh';

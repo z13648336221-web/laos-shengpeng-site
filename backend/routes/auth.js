@@ -9,21 +9,31 @@ const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8小时（缩短会话时间）
 const isProduction = process.env.NODE_ENV === 'production';
 
 // 登录失败次数限制（内存存储，重启后重置）
-const loginAttempts = new Map();
+// IP 维度 + 账号维度双重锁定：仅按 IP 锁定可被分布式爆破绕过
+const loginAttempts = new Map();      // key: ip
+const accountAttempts = new Map();    // key: username（已通过格式校验）
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_DURATION = 15 * 60 * 1000; // 15分钟
 
-function getLoginAttempts(ip) {
-  const record = loginAttempts.get(ip);
+function getAttemptRecord(map, key) {
+  const record = map.get(key);
   if (!record) return { count: 0, locked: false };
   if (record.lockedUntil && Date.now() > record.lockedUntil) {
-    loginAttempts.delete(ip);
+    map.delete(key);
     return { count: 0, locked: false };
   }
   return { count: record.count, locked: !!record.lockedUntil && Date.now() <= record.lockedUntil };
 }
 
-function recordFailedLogin(ip) {
+function getLoginAttempts(ip) {
+  return getAttemptRecord(loginAttempts, ip);
+}
+
+function getAccountAttempts(username) {
+  return getAttemptRecord(accountAttempts, username);
+}
+
+function recordFailedLogin(ip, username) {
   const record = loginAttempts.get(ip) || { count: 0, lockedUntil: null };
   record.count++;
   if (record.count >= MAX_LOGIN_ATTEMPTS) {
@@ -31,10 +41,23 @@ function recordFailedLogin(ip) {
     console.log(`[Security] IP ${ip} 登录尝试次数过多，锁定15分钟`);
   }
   loginAttempts.set(ip, record);
+
+  if (username) {
+    const accRecord = accountAttempts.get(username) || { count: 0, lockedUntil: null };
+    accRecord.count++;
+    if (accRecord.count >= MAX_LOGIN_ATTEMPTS) {
+      accRecord.lockedUntil = Date.now() + LOGIN_LOCK_DURATION;
+      console.log(`[Security] 账号 ${username} 登录尝试次数过多，锁定15分钟`);
+    }
+    accountAttempts.set(username, accRecord);
+  }
 }
 
-function clearLoginAttempts(ip) {
+function clearLoginAttempts(ip, username) {
   loginAttempts.delete(ip);
+  if (username) {
+    accountAttempts.delete(username);
+  }
 }
 
 router.post('/login', async (req, res) => {
@@ -61,26 +84,35 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: '用户名格式错误' });
     }
 
+    // 账号维度锁定检查（防止分布式 IP 爆破同一账号）
+    const accountAttempt = getAccountAttempts(username);
+    if (accountAttempt.locked) {
+      return res.status(429).json({
+        success: false,
+        message: '该账号登录尝试次数过多，请15分钟后再试'
+      });
+    }
+
     const admin = await db.get('admins', { username });
 
     if (!admin) {
-      recordFailedLogin(clientIp);
+      recordFailedLogin(clientIp, username);
       return res.status(401).json({ success: false, message: '用户名或密码错误' });
     }
 
     if (!comparePassword(password, admin.password)) {
-      recordFailedLogin(clientIp);
+      recordFailedLogin(clientIp, username);
       const remaining = MAX_LOGIN_ATTEMPTS - (getLoginAttempts(clientIp).count || 0);
-      return res.status(401).json({ 
-        success: false, 
-        message: remaining > 0 
+      return res.status(401).json({
+        success: false,
+        message: remaining > 0
           ? `用户名或密码错误，还可尝试 ${remaining} 次`
           : '登录尝试次数过多，请15分钟后再试'
       });
     }
 
     // 登录成功，清除失败记录
-    clearLoginAttempts(clientIp);
+    clearLoginAttempts(clientIp, username);
 
     // 自动迁移旧版SHA-256密码到bcrypt
     if (isLegacyHash(admin.password)) {

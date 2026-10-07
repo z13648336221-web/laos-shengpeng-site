@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 router.use(authMiddleware);
+// 角色管理（增删改）仅限超级管理员，防止普通 admin 自我提权；读取对所有管理员开放
+router.post('/', requireRole('super_admin'));
+router.put('/:id', requireRole('super_admin'));
+router.delete('/:id', requireRole('super_admin'));
 
 router.get('/', async (req, res) => {
   try {

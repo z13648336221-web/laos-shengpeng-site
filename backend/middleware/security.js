@@ -36,18 +36,18 @@ function sanitizeObject(obj) {
 
 // =============================================
 // XSS清理中间件 - 清理请求体中的用户输入
-// 排除密码字段（密码不需要HTML转义）
+// 递归处理嵌套对象/数组；排除密码字段（密码不需要HTML转义）
+// multipart 请求体在 multer 解析后由 secure-upload.js 补充清洗
 // =============================================
+const SKIP_SANITIZE_FIELDS = ['password', 'oldPassword', 'newPassword'];
+
 function xssProtection(req, res, next) {
-  if (req.body) {
-    const skipFields = ['password', 'oldPassword', 'newPassword'];
-    
+  if (req.body && typeof req.body === 'object') {
+    const cleaned = {};
     for (const [key, value] of Object.entries(req.body)) {
-      if (skipFields.includes(key)) continue;
-      if (typeof value === 'string') {
-        req.body[key] = sanitizeString(value);
-      }
+      cleaned[key] = SKIP_SANITIZE_FIELDS.includes(key) ? value : sanitizeObject(value);
     }
+    req.body = cleaned;
   }
   
   if (req.query) {
@@ -108,18 +108,32 @@ function hideHeaders(req, res, next) {
 }
 
 // =============================================
-// 输入长度限制中间件
+// 输入长度限制中间件 - 递归检查所有层级的字符串字段
 // =============================================
+function checkLengthDeep(value, maxLength, path, violations) {
+  if (typeof value === 'string') {
+    if (value.length > maxLength) violations.push(path);
+  } else if (Array.isArray(value)) {
+    value.forEach((item, i) => checkLengthDeep(item, maxLength, `${path}[${i}]`, violations));
+  } else if (value && typeof value === 'object') {
+    for (const [key, val] of Object.entries(value)) {
+      checkLengthDeep(val, maxLength, `${path}.${key}`, violations);
+    }
+  }
+}
+
 function inputLengthLimit(maxLength = 5000) {
   return (req, res, next) => {
-    if (req.body) {
+    if (req.body && typeof req.body === 'object') {
+      const violations = [];
       for (const [key, value] of Object.entries(req.body)) {
-        if (typeof value === 'string' && value.length > maxLength) {
-          return res.status(413).json({
-            success: false,
-            message: `字段 ${key} 超出最大长度限制（${maxLength}字符）`
-          });
-        }
+        checkLengthDeep(value, maxLength, key, violations);
+      }
+      if (violations.length > 0) {
+        return res.status(413).json({
+          success: false,
+          message: `字段 ${violations[0]} 超出最大长度限制（${maxLength}字符）`
+        });
       }
     }
     next();
